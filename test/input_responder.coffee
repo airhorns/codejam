@@ -12,13 +12,45 @@ inputResponderWrap = (test) ->
 
 
 exports.testBasicParsing = (test) ->
-		inputResponderWrap(test)
-		test.accept("B|67|43|00016 Corp")
-		test.accept("B|30|28|00001 Corp")
-		test.accept("B|10|0|Statistical Outlier Inc")
-		test.accept("B|73|50|00023 Corp")
-		test.accept("B|10|0|Statistical Outlier Inc")
-		test.accept("B|10|0|Statistical Outlier Inc")
-		test.accept("B|41|68|00041 Corp")
-		test.accept("B|67|57|00030 Corp")
-		test.done()
+	inputResponderWrap(test)
+	test.accept("B|67|43|00016 Corp\r\n")
+	test.accept("B|30|28|00001 Corp\r\n")
+	test.accept("B|10|0|Statistical Outlier Inc\r\n")
+	test.accept("B|73|50|00023 Corp\r\n")
+	test.accept("B|10|0|Statistical Outlier Inc\r\n")
+	test.accept("B|10|0|Statistical Outlier Inc\r\n")
+	test.accept("B|41|68|00041 Corp\r\n")
+	test.accept("B|67|57|00030 Corp\r\n")
+	test.done()
+
+exports.testMoreParsing = (test) ->
+	inputResponderWrap(test)
+	test.accept("B|1000|12|John Lobaugh\r\n")
+	test.accept("B|00100|012| John Lobaugh \r\n")
+	test.done()
+
+exports.testMalformed = (test) ->
+	inputResponderWrap(test)
+	test.error("|30|28|00001 Corp\r\n")
+	test.error("B||0|Statistical Outlier Inc\r\n")
+	test.error("BB|73|50|00023 Corp\r\n")
+	test.error("B|1000000000000000000000|0|Statistical Outlier Inc\r\n")
+	test.error("B|10|0|\r\n")
+	test.error("B|41|68")
+	test.error("B|67|5700030 Corp")
+	test.done()
+
+exports.testSummary = (test) ->
+	inputResponderWrap(test)
+	test.accept("S|SUMMARY\r\n")
+	test.done()
+
+exports.testStop = (test) ->
+	inputResponderWrap(test)
+	test.accept("C|TERMINATE\r\n")
+	test.done()
+
+exports.testReset = (test) ->
+	inputResponderWrap(test)
+	test.accept("R\r\n")
+	test.done()
