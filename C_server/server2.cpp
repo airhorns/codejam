@@ -2,8 +2,6 @@
 // connection, prints client address, sends (optional) greeting and
 // closes the socket. 
 
-
-//TODO: parse various redis replies
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,13 +21,12 @@
 
 #include <list>
 
+#include "credis.h"
+
 #if defined(linux)
 #	include <limits.h>
 #	include <linux/netfilter_ipv4.h>
 #endif // linux
-
-#include "redis/hiredis.h"
-
 
 #define MINBIDVALUE 0
 #define MAXBIDVALUE 100
@@ -48,12 +45,9 @@ const string CORRECTCLOSE("C|TERMINATE\r\n");
 const string CORRECTRESET("R\r\n");
 const string CORRECTSUMMARY("S|SUMMARY\r\n");
 
-static redisContext *blocking_context = NULL;
-redisContext *redisC;
-redisReply *rreply;
-
-static int use_unix = 0;
-long long bidID;
+REDIS rh;
+int bidID;
+int *ptrBidID = &bidID;
 
 struct Session
 {
@@ -73,17 +67,6 @@ struct Session
     rbytes = wbytes = wsize = 0;
   };
 };
-
-
-//redis connect - taken from hiredis
-static void __connect(redisContext **target) {
-    *target = blocking_context = (use_unix ?
-        redisConnectUnix("/tmp/redis.sock") : redisConnect((char*)"127.0.0.1", 6379));
-    if (blocking_context->err) {
-        printf("Connection error: %s\n", blocking_context->errstr);
-        exit(1);
-    }
-}
 
 static void usage(const char *progname)
 {
@@ -112,18 +95,9 @@ static void setReply( Session *sessPtr, const char *reply)
 
 static void resetAll(){
 	bidOpen = 1;
-	redisReply *reply;
-	redisContext *c = blocking_context;
-	
-	//verify we're on DB 0
-	reply = redisCommand(c,"SELECT 0");
-    assert(reply != NULL); freeReplyObject(reply);
-    reply = redisCommand(c,"FLUSHDB");
-    assert(reply != NULL); freeReplyObject(reply);
-    
-	reply = redisCommand(c,"incr global:nextBid");
-	bidID = reply->integer;
-	redisFree(c);	
+	credis_publish(rh, "commands", "reset");
+	credis_flushall(rh);
+	credis_incr(rh, "global:nextBid", ptrBidID);	
 }
 
 static bool parseRequest(Session *sptr)
@@ -145,7 +119,8 @@ static bool parseRequest(Session *sptr)
 		}setReply( sptr, output);
 		return true;
 	}
-	int strlength, firstSeparator,secondSeparator,thirdSeparator, length1, length2, val1, val2;
+	int strlength, firstSeparator,secondSeparator,thirdSeparator, length1, length2, val1, val2, bidNameLen;
+	string bidderName;
 	switch(sptr->readbuf[0] ){
 		case ('B') : 
 			//TODO: input parsing
@@ -159,8 +134,6 @@ static bool parseRequest(Session *sptr)
 			val1 = atoi(input.substr(firstSeparator+1,length1).c_str()); //value of the first field - number of bids
 			val2 = atoi(input.substr(secondSeparator+1,length2).c_str());//value of the second field - cost of bids
 			bidNameLen = thirdSeparator - (sptr->rbytes - 1);
-			
-
 			if( (thirdSeparator == (-1) ) || //error checking...
 				(firstSeparator != 1) || 
 				(secondSeparator-firstSeparator <= 1) ||
@@ -171,22 +144,27 @@ static bool parseRequest(Session *sptr)
 				(val1 == 0) ||
 				(val2 == 0) ||
 				(val1 > MAXBIDATONCE ) || 
-				(val2 > MAXBIDVALUE ) ||
+				(val2 > MAXBIDVALUE ) || 
 				(val2 < MINBIDVALUE ) )
 				{
 					output = ERRORSTR;
 					break;
 			}
-			string bidderName = input.substr(thirdSeparator+1, bidNameLen);
-			redisContext *c = blocking_context;
-			rreply = redisCommand(c, "hmset %i shares %i price %i bidder %s", bidID, val2, val1, bidderName.c_str() );
-			assert(rreply != NULL); freeReplyObject(rreply);
-			rreply = redisCommand(c, "zadd bIds %i %i", val2, bidID);
+
+
+			bidderName = input.substr(thirdSeparator+1, bidNameLen);
+			char request[256];
+			snprintf (request, (sizeof(request) - 1) , "bid_%i shares %i price %i bidder %s", bidID, val1, val2, bidderName.c_str()); //request string
+			char ***ignored; //output value of hmset; is ignored
+			credis_incr(rh, "global:nextBid", ptrBidID);	
+			credis_hmset(rh, request, ignored);
+			snprintf (request, (sizeof(request) - 1) , "%i", bidID);
+			credis_sadd(rh, "bIds" ,request);
 			
+			snprintf(request, (sizeof(request) - 1) , "{bId: %i, shares: %i, price: %i, bidder: %s}", bidID, val1, val2, bidderName.c_str()); //request string
+			credis_publish(rh, "bids", request); //channel = bids.
 			
-			rreply = redisCommand(c, "incr global:nexBid");
-			bidID = rreply->integer;
-			redisFree(c);	
+
 			
 			output = ACCEPTSTR;
 			break;
@@ -194,11 +172,13 @@ static bool parseRequest(Session *sptr)
 			if( strcmp("C|TERMINATE\r\n", sptr->readbuf) == 0 ) { //the wierd char ascii 1 we get after performing a server reset
 				output = ACCEPTSTR;
 				bidOpen = 0;
+				credis_publish(rh, "commands", "close"); //channel = bids.
 			} else{
 				output = ERRORSTR;
 			}break;
 		case('S'):
 			if( strcmp("S|SUMMARY\r\n", sptr->readbuf) == 0 ){
+				credis_publish(rh, "commands", "summary");
 				output = ACCEPTSTR;
 			}else{
 				output = ERRORSTR;
@@ -265,7 +245,7 @@ void run_server(int listeningSocket)
 		set_non_blocking( newSock);
 
 		if( newSock >= 0) {
-		//  printf("New session accepted from socket %d\n", newSock);
+//		  printf("New session accepted from socket %d\n", newSock);
 		  Session *newSess = new Session( newSock);
 		  sessions.push_back( newSess);
 		}
@@ -287,8 +267,8 @@ void run_server(int listeningSocket)
 			// In theory we should check for an error here, but it's
 			// for later
 			sessionClosed = true;
-			//printf("Session with socket %d is closed (errno %d (%s))\n",
-			//   sessPtr->sockfd, errno, strerror(errno));
+//			printf("Session with socket %d is closed (errno %d (%s))\n",
+//			   sessPtr->sockfd, errno, strerror(errno));
 		  } else {
 			// Try to parse the request. For now, we assume request is
 			// done when there is a newline in the string. If the
@@ -326,7 +306,7 @@ void run_server(int listeningSocket)
 		}
 	
 	if( sessionClosed) {
-	  printf("Session with socket %d deleted\n", sessPtr->sockfd);
+//	  printf("Session with socket %d deleted\n", sessPtr->sockfd);
 	  close(sessPtr->sockfd);
 	  it = sessions.erase(it);
 	  delete sessPtr;
@@ -349,14 +329,11 @@ int main(int argc, char *argv[])
   unsigned short portnum = 0;
 
   // Parse command line
-  while( (arg=getopt(argc, argv, "p:h:s")) != EOF) {
+  while( (arg=getopt(argc, argv, "p:h")) != EOF) {
     switch( arg) {
     case 'p':
       portnum = (unsigned short)atoi(optarg);
       break;
-	case 's' :
-		use_unix = 1;
-		break;
     case 'h':
     default:
       usage(argv[0]);
@@ -365,13 +342,10 @@ int main(int argc, char *argv[])
       break;
     }
   }
-
-  __connect(&redisC);
-  if( &redisC->err != NULL){
-	printf("oh shi-!\n");
-	//TODO!!!!!
-  }
+  bidID = 0;
   
+  rh = credis_connect(NULL,6379,2000); //2 s timeout
+
   // Create listening socket
   int listeningSock = socket( AF_INET, SOCK_STREAM, IPPROTO_TCP);
   
