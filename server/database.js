@@ -9,7 +9,8 @@
     return this;
   };
   BidDatabase.prototype.addBid = function(shares, price, bidder) {
-    return this.client.zadd("bids", price, "" + (shares) + ":" + (bidder));
+    this.client.zadd("bids", price, "" + (shares) + ":" + (bidder));
+    return this.client.zadd("" + (shares) + ":" + (price) + ":" + (bidder));
   };
   BidDatabase.prototype.reInitialize = function() {
     this.client.flushall();
