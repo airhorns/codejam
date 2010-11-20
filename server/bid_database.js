@@ -13,6 +13,9 @@
     this.client.on("error", __bind(function(err) {
       return console.log("Redis connection error to " + this.client.host + ":" + this.client.port + " - " + err);
     }, this));
+    if (typeof responder !== "undefined" && responder !== null) {
+      this.watchResponder(responder);
+    }
     return this;
   };
   BidDatabase.prototype.watchResponder = function(responder) {
@@ -24,7 +27,13 @@
     return this.getBidId(__bind(function(error, bId) {
       console.log("Bid " + (bId));
       this.client.hmset("bid_" + (bId), "shares", shares, "price", price, "bidder", bidder, Redis.print);
-      return this.client.zadd("bIds", price, bId, Redis.print);
+      this.client.sadd("bIds", bId, Redis.print);
+      return this.client.publish("bids", JSON.stringify({
+        bId: bId,
+        shares: shares,
+        price: price,
+        bidder: bidder
+      }));
     }, this));
   };
   BidDatabase.prototype.reInitialize = function() {

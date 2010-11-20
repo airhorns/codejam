@@ -6,6 +6,7 @@ class BidDatabase
 		@client = Redis.createClient()
 		@client.on "error", (err) =>
 			console.log("Redis connection error to " + @client.host + ":" + @client.port + " - " + err)
+		this.watchResponder(responder) if responder?
 
 	watchResponder: (responder) ->
 		responder.on "bidReceived", this.addBid
@@ -18,7 +19,8 @@ class BidDatabase
 			# Bid shares count ordered set, for quick summing
 			# @client.multi()
 			@client.hmset("bid_#{bId}", "shares", shares, "price", price, "bidder", bidder, Redis.print)
-			@client.zadd("bIds", price, bId, Redis.print)
+			@client.sadd("bIds", bId, Redis.print)
+			@client.publish("bids", JSON.stringify({bId: bId, shares: shares, price: price, bidder: bidder}))
 				# .exec((err, replies) ->
 				# 	console.log "Redis saving error!", err if err
 				# 	for r in replies

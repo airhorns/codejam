@@ -7,6 +7,8 @@ Install these packages using `npm install <package>`
 In production:
  - redis
  - socket.io 
+ - express
+ - hamljs
 
 In development
  - nodeunit

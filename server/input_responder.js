@@ -23,7 +23,7 @@
   InputResponder.prototype.acceptingBids = true;
   InputResponder.prototype.parseInput = function(inputString) {
     var _ref, stringSplit;
-    console.log("Tryign tp arse input string " + (inputString));
+    console.log("Trying to parse input string " + (inputString));
     if (!(this.acceptingBids)) {
       return this.BIDCLOSEDSTRING;
     }

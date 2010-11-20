@@ -12,7 +12,7 @@ class InputResponder extends EventEmitter
 	# Start up accepting bids.
 	acceptingBids: true
 	parseInput: (inputString) ->
-		console.log("Tryign tp arse input string #{inputString}")
+		console.log("Trying to parse input string #{inputString}")
 		# return error: not acepting bids anymore
 		return @BIDCLOSEDSTRING unless @acceptingBids
 
