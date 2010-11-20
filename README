@@ -1,0 +1,20 @@
+===== CODE JAM =====
+
+==== Installation ====
+You should install npm. It's a package manager for node.
+Install these packages using `npm install <package>`
+
+In production:
+ - redis
+
+In development
+ - nodeunit
+ - coffee-script
+ - jitter 
+
+==== Compiling Coffeescript files ====
+Run `jitter . .` in your project directory.
+
+
+==== Running Tests ====
+Run nodeunit <testfile>.js
