@@ -13,21 +13,26 @@ class BidDatabase
 
 	addBid: (shares, price, bidder) =>
 		console.log("Adding bid", shares, price, bidder)
-		# bid = this.getBidId()
-
-		# Bid shares count ordered set, for quick summing
-		@client.zadd "bids", price, "#{shares}:#{bidder}", Redis.print
-
-		# Bid ids ordered set, for quick finding of data
-		# @client.zadd "#{shares}:#{price}:#{bidder}"
-
+		this.getBidId((bId) =>
+			# Bid shares count ordered set, for quick summing
+			# @client.multi()
+			@client.hmset(bId, "shares", shares, "price", price, "bidder", bidder, Redis.print)
+			@client.zadd("bIds", price, bId, Redis.print)
+				# .exec((err, replies) ->
+				# 	console.log "Redis saving error!", err if err
+				# 	for r in replies
+				# 		Redis.print r
+				# )
+			# Bid ids ordered set, for quick finding of data
+			# @client.zadd "#{shares}:#{price}:#{bidder}"
+		)
 	reInitialize: () =>
 		console.log("Resetting database")
 		@client.flushall(Redis.print)
 		@client.incr("global:nextBid", Redis.print)
 		true
 	
-	getBidId: () ->
-		return @client.incr("global:nextBid")
+	getBidId: (callback) ->
+		x = @client.incr("global:nextBid", callback)
 
 exports.BidDatabase = BidDatabase

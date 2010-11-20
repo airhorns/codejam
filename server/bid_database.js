@@ -21,7 +21,10 @@
   };
   BidDatabase.prototype.addBid = function(shares, price, bidder) {
     console.log("Adding bid", shares, price, bidder);
-    return this.client.zadd("bids", price, "" + (shares) + ":" + (bidder), Redis.print);
+    return this.getBidId(__bind(function(bId) {
+      this.client.hmset(bId, "shares", shares, "price", price, "bidder", bidder, Redis.print);
+      return this.client.zadd("bIds", price, bId, Redis.print);
+    }, this));
   };
   BidDatabase.prototype.reInitialize = function() {
     console.log("Resetting database");
@@ -29,8 +32,9 @@
     this.client.incr("global:nextBid", Redis.print);
     return true;
   };
-  BidDatabase.prototype.getBidId = function() {
-    return this.client.incr("global:nextBid");
+  BidDatabase.prototype.getBidId = function(callback) {
+    var x;
+    return (x = this.client.incr("global:nextBid", callback));
   };
   exports.BidDatabase = BidDatabase;
 }).call(this);

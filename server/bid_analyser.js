@@ -20,7 +20,7 @@
   };
   BidAnalyser.prototype.generateSummary = function() {
     console.log("Generating Summary");
-    return this.database.client.zcard("bids", function(error, count) {
+    return this.database.client.zcard("bIds", function(error, count) {
       return console.log(count);
     });
   };
