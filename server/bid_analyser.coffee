@@ -9,7 +9,7 @@ class BidAnalyser
 	
 	generateSummary: () =>
 		console.log("Generating Summary")
-		@database.zcard("bids", (error, count) ->
+		@database.client.zcard("bids", (error, count) ->
 			console.log(count)
 		)
 	clearingValue: () ->
