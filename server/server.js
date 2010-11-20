@@ -1,3 +1,4 @@
+var CLEARINGSHARES = 1000000
 require.paths.unshift('.');
 var hexy = require("hexy");
 var database, responder, analyser;
@@ -12,13 +13,21 @@ var server = net.createServer( function (stream) {
 	});
 
 	stream.setEncoding('ascii');
+	buffer = ""; 
 	stream.on('data', function(data){
-		var retStr = responder.parseInput(data);
+		buffer += data;
+  	lineEnd = buffer.indexOf("\r\n");  
+		if (lineEnd) {
+      data = buffer.substring(0, lineEnd);  
+      buffer = buffer.substring(data.length + 1, buffer.length);  
+      retStr = responder.parseInput(data);
+			stream.write(retStr);
+		}
+			
 		// console.log(hexy.hexy(data));
 		// console.log(hexy.hexy(retStr));
 		// console.log("Message "+data+" being returned "+retStr);
-		
-		stream.write(retStr);
+		// 
 	});
 	stream.on('end', function(){
 		stream.end();
@@ -30,6 +39,6 @@ responder = new InputResponder();
 database = new BidDatabase();
 database.watchResponder(responder);
 database.reInitialize();
-analyser = new BidAnalyser(database, responder);
+analyser = new BidAnalyser(CLEARINGSHARES, database, responder);
 
 server.listen(8124, 'localhost');

@@ -21,8 +21,9 @@
   };
   BidDatabase.prototype.addBid = function(shares, price, bidder) {
     console.log("Adding bid", shares, price, bidder);
-    return this.getBidId(__bind(function(bId) {
-      this.client.hmset(bId, "shares", shares, "price", price, "bidder", bidder, Redis.print);
+    return this.getBidId(__bind(function(error, bId) {
+      console.log("Bid " + (bId));
+      this.client.hmset("bid_" + (bId), "shares", shares, "price", price, "bidder", bidder, Redis.print);
       return this.client.zadd("bIds", price, bId, Redis.print);
     }, this));
   };

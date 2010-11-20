@@ -13,10 +13,11 @@ class BidDatabase
 
 	addBid: (shares, price, bidder) =>
 		console.log("Adding bid", shares, price, bidder)
-		this.getBidId((bId) =>
+		this.getBidId((error, bId) =>
+			console.log("Bid #{bId}")
 			# Bid shares count ordered set, for quick summing
 			# @client.multi()
-			@client.hmset(bId, "shares", shares, "price", price, "bidder", bidder, Redis.print)
+			@client.hmset("bid_#{bId}", "shares", shares, "price", price, "bidder", bidder, Redis.print)
 			@client.zadd("bIds", price, bId, Redis.print)
 				# .exec((err, replies) ->
 				# 	console.log "Redis saving error!", err if err

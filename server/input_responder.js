@@ -23,6 +23,7 @@
   InputResponder.prototype.acceptingBids = true;
   InputResponder.prototype.parseInput = function(inputString) {
     var _ref, stringSplit;
+    console.log("Tryign tp arse input string " + (inputString));
     if (!(this.acceptingBids)) {
       return this.BIDCLOSEDSTRING;
     }
@@ -45,7 +46,7 @@
     }
   };
   InputResponder.prototype.parseSubmission = function(split, full) {
-    var price, shares;
+    var _ref, price, shares;
     shares = parseFloat(split[1]);
     if (shares > this.MAXBIDATONCE) {
       return this.ERRORSTRING;
@@ -53,6 +54,12 @@
     price = parseFloat(split[2]);
     if ((price < this.MINBIDVALUE) || (price > this.MAXBIDVALUE)) {
       return this.ERRORSTRING;
+    }
+    console.log("Parsed a bid from " + (full) + " for " + (shares) + " shares and price " + (price) + " from '" + (split[3]) + "'");
+    if (!((typeof full !== "undefined" && full !== null) && (typeof shares !== "undefined" && shares !== null) && (typeof price !== "undefined" && price !== null) && (typeof (_ref = split[3]) !== "undefined" && _ref !== null))) {
+      throw {
+        message: "Bad parse!"
+      };
     }
     this.emit("bidReceived", shares, price, split[3]);
     return this.ACCEPTSTRING;
@@ -78,6 +85,7 @@
     if (full !== "R") {
       return this.ERRORSTRING;
     } else {
+      this.acceptingBids = true;
       this.emit("resetDatabase");
       return this.ACCEPTSTRING;
     }

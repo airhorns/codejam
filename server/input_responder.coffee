@@ -12,7 +12,7 @@ class InputResponder extends EventEmitter
 	# Start up accepting bids.
 	acceptingBids: true
 	parseInput: (inputString) ->
-
+		console.log("Tryign tp arse input string #{inputString}")
 		# return error: not acepting bids anymore
 		return @BIDCLOSEDSTRING unless @acceptingBids
 
@@ -50,7 +50,8 @@ class InputResponder extends EventEmitter
 		price = parseFloat(split[2])
 		if (price < @MINBIDVALUE) || (price > @MAXBIDVALUE)
 			return @ERRORSTRING
-		
+		console.log("Parsed a bid from #{full} for #{shares} shares and price #{price} from '#{split[3]}'")
+		throw {message: "Bad parse!"} unless full? && shares? && price? && split[3]?
 		this.emit("bidReceived", shares, price, split[3])
 		return @ACCEPTSTRING
 
@@ -78,6 +79,7 @@ class InputResponder extends EventEmitter
 		if full != "R"
 			return @ERRORSTRING
 		else
+			@acceptingBids = true
 			this.emit("resetDatabase")
 			return @ACCEPTSTRING
 
