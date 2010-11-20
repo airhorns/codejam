@@ -25,7 +25,12 @@ class InputResponder extends EventEmitter
 		# Trim input string to get rid of any shenanigans
 		inputString = inputString.replace(/[\s\u0000\u0012]*$/mig, "").replace(/^[\s\u0000\u0012]*/mig, "")
 		stringSplit = inputString.split("|")
-
+		# console.log(inputString)
+		# console.log(stringSplit)
+		# x = decodeURIComponent( escape( inputString ) )
+		# console.log(x)
+		# console.log(x.split("|"))
+		# y = unescape( encodeURIComponent( inputString ) )
 		# Ensure string was split and stuff
 		unless stringSplit[0]? && typeof stringSplit[0] == "string"
 			return @ERRORSTRING

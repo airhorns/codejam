@@ -20,7 +20,7 @@
     return responder.on("resetDatabase", this.reInitialize);
   };
   BidDatabase.prototype.addBid = function(shares, price, bidder) {
-    console.log("Adding bid");
+    console.log("Adding bid", shares, price, bidder);
     return this.client.zadd("bids", price, "" + (shares) + ":" + (bidder), Redis.print);
   };
   BidDatabase.prototype.reInitialize = function() {

@@ -12,7 +12,7 @@ class BidDatabase
 		responder.on "resetDatabase", this.reInitialize
 
 	addBid: (shares, price, bidder) =>
-		console.log("Adding bid")
+		console.log("Adding bid", shares, price, bidder)
 		# bid = this.getBidId()
 
 		# Bid shares count ordered set, for quick summing

@@ -6,6 +6,7 @@ Install these packages using `npm install <package>`
 
 In production:
  - redis
+ - socket.io 
 
 In development
  - nodeunit
