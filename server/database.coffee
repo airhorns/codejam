@@ -8,7 +8,10 @@ class BidDatabase
 
 	addBid: (shares, price, bidder) ->
 		# bid = this.getBidId()
-		@client.zadd "#{shares}:#{price}:#{bidder}"
+
+		# Bid shares count ordered set, for quick summing
+		@client.zadd "bids", price, "#{shares}:#{bidder}"
+		# Bid ids ordered set, for quick finding of data
 
 	reInitialize: () ->
 		@client.flushall()
@@ -18,4 +21,4 @@ class BidDatabase
 	getBidId: () ->
 		return @client.incr("global:nextBid")
 
-exports = BidDatabase
+exports.BidDatabase = BidDatabase

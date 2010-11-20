@@ -1,5 +1,5 @@
-BidDatabase = require('database')
-
+require.paths.unshift('.')
+BidDatabase = require('database').BidDatabase
 db = new BidDatabase()
 
 for i in [0..1000000]

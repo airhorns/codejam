@@ -1,5 +1,5 @@
 (function() {
-  var BidDatabase, Redis, exports;
+  var BidDatabase, Redis;
   Redis = require("redis");
   BidDatabase = function() {
     this.client = Redis.createClient();
@@ -9,7 +9,7 @@
     return this;
   };
   BidDatabase.prototype.addBid = function(shares, price, bidder) {
-    return this.client.zadd("" + (shares) + ":" + (price) + ":" + (bidder));
+    return this.client.zadd("bids", price, "" + (shares) + ":" + (bidder));
   };
   BidDatabase.prototype.reInitialize = function() {
     this.client.flushall();
@@ -19,5 +19,5 @@
   BidDatabase.prototype.getBidId = function() {
     return this.client.incr("global:nextBid");
   };
-  exports = BidDatabase;
+  exports.BidDatabase = BidDatabase;
 }).call(this);

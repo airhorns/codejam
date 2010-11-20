@@ -1,6 +1,7 @@
 (function() {
   var BidDatabase, db, i;
-  BidDatabase = require('database');
+  require.paths.unshift('.');
+  BidDatabase = require('database').BidDatabase;
   db = new BidDatabase();
   for (i = 0; i <= 1000000; i++) {
     db.addBid(10, i, "test");
