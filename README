@@ -11,6 +11,7 @@ In development
  - nodeunit
  - coffee-script
  - jitter 
+ - hexy
 
 ==== Compiling Coffeescript files ====
 Run `jitter . .` in your project directory.

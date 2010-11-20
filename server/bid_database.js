@@ -16,19 +16,17 @@
     return this;
   };
   BidDatabase.prototype.watchResponder = function(responder) {
-    var _ref;
-    if (typeof (_ref = responder.eventEmitter) !== "undefined" && _ref !== null) {
-      responder.on("bidReceived", this.addBid);
-      return responder.on("resetDatabase", this.reInitialize);
-    }
+    responder.on("bidReceived", this.addBid);
+    return responder.on("resetDatabase", this.reInitialize);
   };
   BidDatabase.prototype.addBid = function(shares, price, bidder) {
-    return this.client.zadd("bids", price, "" + (shares) + ":" + (bidder), function() {});
+    console.log("Adding bid");
+    return this.client.zadd("bids", price, "" + (shares) + ":" + (bidder), Redis.print);
   };
   BidDatabase.prototype.reInitialize = function() {
     console.log("Resetting database");
-    this.client.flushall();
-    this.client.incr("global:nextBid");
+    this.client.flushall(Redis.print);
+    this.client.incr("global:nextBid", Redis.print);
     return true;
   };
   BidDatabase.prototype.getBidId = function() {

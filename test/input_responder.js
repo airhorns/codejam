@@ -32,6 +32,14 @@
     test.accept("B|00100|012| John Lobaugh \r\n");
     return test.done();
   };
+  exports.testNewLines = function(test) {
+    inputResponderWrap(test);
+    test.accept("\r\nB|1000|12|John Lobaugh");
+    test.accept("\r\nB|00100|012| John Lobaugh ");
+    test.accept("\u0000\u0012B|1000|12|John Lobaugh");
+    test.accept("\u0000\u0012B|00100|012| John Lobaugh ");
+    return test.done();
+  };
   exports.testMalformed = function(test) {
     inputResponderWrap(test);
     test.error("|30|28|00001 Corp\r\n");
@@ -56,6 +64,7 @@
   exports.testReset = function(test) {
     inputResponderWrap(test);
     test.accept("R\r\n");
+    test.accept("\r\nR");
     return test.done();
   };
 }).call(this);

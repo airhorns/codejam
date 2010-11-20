@@ -16,13 +16,14 @@ class InputResponder extends EventEmitter
 		# return error: not acepting bids anymore
 		return @BIDCLOSEDSTRING unless @acceptingBids
 
-		lastchar1 = inputString.charAt(inputString.length-2)
-		lastchar2 = inputString.charAt(inputString.length-1)
+		# lastchar1 = inputString.charAt(inputString.length-2)
+		# lastchar2 = inputString.charAt(inputString.length-1)
 
-		if !lastchar1? || !lastchar2? || (lastchar1 != "\r" ) || (lastchar2 != "\n" )
-			return @ERRORSTRING
+		# if !lastchar1? || !lastchar2? || (lastchar1 != "\r" ) || (lastchar2 != "\n" )
+		# 	return @ERRORSTRING
+
 		# Trim input string to get rid of any shenanigans
-		inputString = inputString.replace(/[\s]*$/, "").replace(/^[\s]*/, "")
+		inputString = inputString.replace(/[\s\u0000\u0012]*$/mig, "").replace(/^[\s\u0000\u0012]*/mig, "")
 		stringSplit = inputString.split("|")
 
 		# Ensure string was split and stuff
@@ -40,12 +41,12 @@ class InputResponder extends EventEmitter
 		shares = parseFloat(split[1])
 		if shares > @MAXBIDATONCE
 			return @ERRORSTRING
-
+		
 		price = parseFloat(split[2])
 		if (price < @MINBIDVALUE) || (price > @MAXBIDVALUE)
 			return @ERRORSTRING
-
-		this.emit("bid", shares, price, split[3])
+		
+		this.emit("bidReceived", shares, price, split[3])
 		return @ACCEPTSTRING
 
 	parseClose: (split, full) ->

@@ -22,16 +22,11 @@
   InputResponder.prototype.BIDCLOSEDSTRING = "C\r\n";
   InputResponder.prototype.acceptingBids = true;
   InputResponder.prototype.parseInput = function(inputString) {
-    var _ref, lastchar1, lastchar2, stringSplit;
+    var _ref, stringSplit;
     if (!(this.acceptingBids)) {
       return this.BIDCLOSEDSTRING;
     }
-    lastchar1 = inputString.charAt(inputString.length - 2);
-    lastchar2 = inputString.charAt(inputString.length - 1);
-    if (!(typeof lastchar1 !== "undefined" && lastchar1 !== null) || !(typeof lastchar2 !== "undefined" && lastchar2 !== null) || (lastchar1 !== "\r") || (lastchar2 !== "\n")) {
-      return this.ERRORSTRING;
-    }
-    inputString = inputString.replace(/[\s]*$/, "").replace(/^[\s]*/, "");
+    inputString = inputString.replace(/[\s\u0000\u0012]*$/mig, "").replace(/^[\s\u0000\u0012]*/mig, "");
     stringSplit = inputString.split("|");
     if (!((typeof (_ref = stringSplit[0]) !== "undefined" && _ref !== null) && typeof stringSplit[0] === "string")) {
       return this.ERRORSTRING;
@@ -59,7 +54,7 @@
     if ((price < this.MINBIDVALUE) || (price > this.MAXBIDVALUE)) {
       return this.ERRORSTRING;
     }
-    this.emit("bid", shares, price, split[3]);
+    this.emit("bidReceived", shares, price, split[3]);
     return this.ACCEPTSTRING;
   };
   InputResponder.prototype.parseClose = function(split, full) {

@@ -29,6 +29,14 @@ exports.testMoreParsing = (test) ->
 	test.accept("B|00100|012| John Lobaugh \r\n")
 	test.done()
 
+exports.testNewLines = (test) ->
+	inputResponderWrap(test)
+	test.accept("\r\nB|1000|12|John Lobaugh")
+	test.accept("\r\nB|00100|012| John Lobaugh ")
+	test.accept("\u0000\u0012B|1000|12|John Lobaugh")
+	test.accept("\u0000\u0012B|00100|012| John Lobaugh ")
+	test.done()
+
 exports.testMalformed = (test) ->
 	inputResponderWrap(test)
 	test.error("|30|28|00001 Corp\r\n")
@@ -53,4 +61,5 @@ exports.testStop = (test) ->
 exports.testReset = (test) ->
 	inputResponderWrap(test)
 	test.accept("R\r\n")
+	test.accept("\r\nR") # fucked up sample of what the old client is doing
 	test.done()
