@@ -38,5 +38,5 @@ database.watchResponder(responder)
 # database.reInitialize()
 analyser = new BidAnalyser(CLEARINGSHARES, database, responder)
 
-server.maxConnections = 1000
+server.maxConnections = 10000
 server.listen(8124, 'localhost')

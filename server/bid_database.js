@@ -1,9 +1,43 @@
 (function() {
-  var BidDatabase, Redis;
+  var BidChunkProcessor, BidDatabase, Redis;
   var __bind = function(func, context) {
     return function(){ return func.apply(context, arguments); };
   };
   Redis = require("redis");
+  BidChunkProcessor = function(client, processCallback) {
+    var _this;
+    _this = this;
+    this.tryNextChunk = function(){ return BidChunkProcessor.prototype.tryNextChunk.apply(_this, arguments); };
+    this.getNextChunk = function(){ return BidChunkProcessor.prototype.getNextChunk.apply(_this, arguments); };
+    this.processCallback = processCallback;
+    this.client = client;
+    this.client.scard("bIds", __bind(function(error, count) {
+      if (typeof error !== "undefined" && error !== null) {
+        throw error;
+      }
+      console.log("" + (count) + " bids total.");
+      this.totalChunks = Math.ceil(count / this.chunkSize);
+      return this.getNextChunk();
+    }, this));
+    return this;
+  };
+  BidChunkProcessor.prototype.chunkSize = 100;
+  BidChunkProcessor.prototype.currentChunk = 0;
+  BidChunkProcessor.prototype.count = 0;
+  BidChunkProcessor.prototype.getNextChunk = function() {
+    return this.client.sort(["bIds", "BY", "bid_*->price", "DESC", "LIMIT", this.currentChunk * this.chunkSize, this.chunkSize, "GET", "bid_*->price", "GET", "bid_*->shares"], __bind(function(err, reply) {
+      this.processCallback.call(arguments);
+      return this.currentChunk += 1;
+    }, this));
+  };
+  BidChunkProcessor.prototype.tryNextChunk = function(errorCallback) {
+    if (!(this.currentChunk >= this.totalChunks)) {
+      return this.getNextChunk();
+    } else {
+      errorCallback();
+      return false;
+    }
+  };
   BidDatabase = function(config, responder) {
     var _this;
     _this = this;
@@ -25,26 +59,25 @@
   BidDatabase.prototype.addBid = function(shares, price, bidder) {
     console.log("Adding bid", shares, price, bidder);
     return this.getBidId(__bind(function(error, bId) {
-      console.log("Bid " + (bId));
-      this.client.hmset("bid_" + (bId), "shares", shares, "price", price, "bidder", bidder, Redis.print);
-      this.client.sadd("bIds", bId, Redis.print);
-      return this.client.publish("bids", JSON.stringify({
+      return this.client.multi().hmset("bid_" + (bId), "shares", shares, "price", price, "bidder", bidder, "time", new Date().getTime()).sadd("bIds", bId).publish("bids", JSON.stringify({
         bId: bId,
         shares: shares,
         price: price,
         bidder: bidder
-      }));
+      })).exec(function() {});
     }, this));
+  };
+  BidDatabase.prototype.getBidId = function(callback) {
+    return this.client.incr("global:nextBid", callback);
+  };
+  BidDatabase.prototype.fetchBidsInChunks = function(processChunkCallback) {
+    return new BidChunkProcessor(this.client, processChunkCallback);
   };
   BidDatabase.prototype.reInitialize = function() {
     console.log("Resetting database");
     this.client.flushall(Redis.print);
     this.client.incr("global:nextBid", Redis.print);
     return true;
-  };
-  BidDatabase.prototype.getBidId = function(callback) {
-    var x;
-    return (x = this.client.incr("global:nextBid", callback));
   };
   exports.BidDatabase = BidDatabase;
 }).call(this);

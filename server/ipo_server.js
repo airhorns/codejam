@@ -34,6 +34,6 @@
   database = new BidDatabase();
   database.watchResponder(responder);
   analyser = new BidAnalyser(CLEARINGSHARES, database, responder);
-  server.maxConnections = 1000;
+  server.maxConnections = 10000;
   server.listen(8124, 'localhost');
 }).call(this);

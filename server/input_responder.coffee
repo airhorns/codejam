@@ -12,26 +12,13 @@ class InputResponder extends EventEmitter
 	# Start up accepting bids.
 	acceptingBids: true
 	parseInput: (inputString) ->
-		console.log("Trying to parse input string #{inputString}")
 		# return error: not acepting bids anymore
 		return @BIDCLOSEDSTRING unless @acceptingBids
-
-		# lastchar1 = inputString.charAt(inputString.length-2)
-		# lastchar2 = inputString.charAt(inputString.length-1)
-
-		# if !lastchar1? || !lastchar2? || (lastchar1 != "\r" ) || (lastchar2 != "\n" )
-		# 	return @ERRORSTRING
 
 		# Trim input string to get rid of any shenanigans
 		inputString = inputString.replace(/[\s\u0000\u0012]*$/mig, "").replace(/^[\s\u0000\u0012]*/mig, "")
 		stringSplit = inputString.split("|")
-		# console.log(inputString)
-		# console.log(stringSplit)
-		# x = decodeURIComponent( escape( inputString ) )
-		# console.log(x)
-		# console.log(x.split("|"))
-		# y = unescape( encodeURIComponent( inputString ) )
-		# Ensure string was split and stuff
+
 		unless stringSplit[0]? && typeof stringSplit[0] == "string"
 			return @ERRORSTRING
 
@@ -50,7 +37,7 @@ class InputResponder extends EventEmitter
 		price = parseFloat(split[2])
 		if (price < @MINBIDVALUE) || (price > @MAXBIDVALUE)
 			return @ERRORSTRING
-		console.log("Parsed a bid from #{full} for #{shares} shares and price #{price} from '#{split[3]}'")
+		
 		throw {message: "Bad parse!"} unless full? && shares? && price? && split[3]?
 		this.emit("bidReceived", shares, price, split[3])
 		return @ACCEPTSTRING
