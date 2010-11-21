@@ -14,7 +14,7 @@
 
 #include <errno.h>
 #include <netdb.h>
-
+#include <time.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
@@ -153,14 +153,14 @@ static bool parseRequest(Session *sptr)
 
 			bidderName = input.substr(thirdSeparator+1, bidNameLen);
 			char request[256];
-			snprintf (request, (sizeof(request) - 1) , "bid_%i shares %i price %i bidder %s", bidID, val1, val2, bidderName.c_str()); //request string
+			snprintf (request, (sizeof(request) - 1) , "bid_%i shares %i price %i bidder %s time %i", bidID, val1, val2, bidderName.c_str(), time(0)); //request string
 			char ***ignored; //output value of hmset; is ignored
 			credis_incr(rh, "global:nextBid", ptrBidID);	
 			credis_hmset(rh, request, ignored);
 			snprintf (request, (sizeof(request) - 1) , "%i", bidID);
 			credis_sadd(rh, "bIds" ,request);
 			
-			snprintf(request, (sizeof(request) - 1) , "{bId: %i, shares: %i, price: %i, bidder: %s}", bidID, val1, val2, bidderName.c_str()); //request string
+			snprintf(request, (sizeof(request) - 1) , "{bId: %i, shares: %i, price: %i, bidder: %s, time: %i}", bidID, val1, val2, bidderName.c_str(),time(0)); //request string
 			credis_publish(rh, "bids", request); //channel = bids.
 			
 
@@ -212,7 +212,7 @@ void run_server(int listeningSocket)
   while(true) {
     FD_ZERO(&rmask);
     FD_ZERO(&wmask);
-//	printf("%i sessions currently present\n", sessions.size());
+	printf("%i sessions currently present\n", sessions.size());
     FD_SET( listeningSocket, &rmask);
     for( it=sessions.begin(); it != sessions.end(); ++it) {
       Session *sess = *it;
