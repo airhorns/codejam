@@ -86,7 +86,6 @@ static void printStatus(){
 	freeReplyObject((void*)rreply);
 	int counter;
 	rreply = (redisReply*)redisCommand(redC, "SORT bIds BY bid_*->price DESC GET bid_*->shares GET bid_*->price");
-	printf("%lli\n",total);
 	for(counter=0;(counter) < total-2;counter++){
 		sharesSold+=atoi(rreply->element[counter*2+1]->str);
 	}

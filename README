@@ -26,8 +26,8 @@ Install npm
 $ curl http://npmjs.org/install.sh | sh
 
 Compile the C server
-
-$ g++ -O3 -Wall -o server server3.cpp ...
+$ cd C_server
+$ make && gcc -o ./hiredis.o -c ./hiredis.c && g++ -O3 -Wall -o serverTest ./server3.cpp ./*.o
 
 
 You should install npm. It's a package manager for node.
