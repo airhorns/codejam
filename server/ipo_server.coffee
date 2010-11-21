@@ -1,4 +1,6 @@
-CLEARINGSHARES = 1000000
+fs = require('fs')
+config = require('yaml').eval(fs.readFileSync('./../public/config.yaml', 'utf8'))
+
 require.paths.unshift('.')
 hexy = require("hexy")
 net = require('net')
@@ -38,11 +40,11 @@ server = net.createServer (stream) ->
 		stream.end()
 
 # Initialize our components
-responder = new InputResponder()
+responder = new InputResponder(config)
 database = new BidDatabase()
 database.watchResponder(responder)
 # database.reInitialize()
-analyser = new BidAnalyser(CLEARINGSHARES, database, responder)
+analyser = new BidAnalyser(config.clearingShares, database, responder)
 
 server.maxConnections = 10000
-server.listen(8124)
+server.listen(config.port)

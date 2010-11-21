@@ -16,12 +16,12 @@
         throw error;
       }
       console.log("" + (count) + " bids total.");
-      this.totalChunks = Math.ceil(count / this.chunkSize);
+      this.totalChunks = Math.ceil(count / this.chunkSize) - 1;
       return this.getNextChunk();
     }, this));
     return this;
   };
-  BidChunkProcessor.prototype.chunkSize = 100;
+  BidChunkProcessor.prototype.chunkSize = 300;
   BidChunkProcessor.prototype.currentChunk = 0;
   BidChunkProcessor.prototype.count = 0;
   BidChunkProcessor.prototype.processing = true;
@@ -29,10 +29,14 @@
     if (!(this.processing)) {
       return false;
     }
+    console.log(this.currentChunk, this.chunkSize, this.totalChunks);
     return this.client.sort(["bIds", "BY", "bid_*->price", "DESC", "LIMIT", this.currentChunk * this.chunkSize, this.chunkSize, "GET", "#", "GET", "bid_*->shares", "GET", "bid_*->price", "GET", "bid_*->bidder", "GET", "bid_*->time"], __bind(function(err, reply) {
       var bId, bidder, formatted, price, shares, time;
       if (!(typeof reply !== "undefined" && reply !== null)) {
         this.processing = false;
+        this.processCallback({
+          msg: "no more records"
+        });
         return false;
       }
       formatted = [];
@@ -64,7 +68,9 @@
     }, this));
   };
   BidChunkProcessor.prototype.tryNextChunk = function(errorCallback) {
+    console.log("trying next chunk");
     if (!(this.currentChunk >= this.totalChunks)) {
+      console.log("more chunks!");
       this.currentChunk += 1;
       return this.getNextChunk();
     } else {
@@ -74,7 +80,7 @@
       }
     }
   };
-  BidDatabase = function(config, responder) {
+  BidDatabase = function(responder) {
     var _this;
     _this = this;
     this.reInitialize = function(){ return BidDatabase.prototype.reInitialize.apply(_this, arguments); };

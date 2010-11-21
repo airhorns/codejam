@@ -2,7 +2,7 @@ Redis = require("redis")
 # Redis.debug_mode = true
 
 class BidChunkProcessor
-	chunkSize: 100
+	chunkSize: 300
 	currentChunk: 0
 	count: 0
 	processing: true
@@ -13,13 +13,14 @@ class BidChunkProcessor
 			throw error if error?
 			console.log("#{count} bids total.")
 			# Calculate the total number of chunks
-			@totalChunks = Math.ceil(count/@chunkSize)
+			@totalChunks = Math.ceil(count/@chunkSize)-1
 			# Start pagination of results
 			this.getNextChunk()
 		)
 
 	getNextChunk: () =>
 		return false unless @processing
+		console.log(@currentChunk, @chunkSize, @totalChunks)
 		@client.sort(["bIds", "BY", "bid_*->price", "DESC",
 									"LIMIT", @currentChunk * @chunkSize, @chunkSize,
 									"GET", "#",
@@ -30,6 +31,7 @@ class BidChunkProcessor
 			(err, reply) =>
 				if !reply?
 					@processing = false
+					@processCallback({msg: "no more records"})
 					return false
 
 				formatted = []
@@ -49,7 +51,9 @@ class BidChunkProcessor
 		)
 
 	tryNextChunk: (errorCallback) =>
+		console.log("trying next chunk")
 		unless @currentChunk >= @totalChunks
+			console.log("more chunks!")
 			@currentChunk += 1
 			this.getNextChunk()
 		else
@@ -57,7 +61,7 @@ class BidChunkProcessor
 			errorCallback() if errorCallback?
 
 class BidDatabase
-	constructor: (config, responder) ->
+	constructor: (responder) ->
 		@client = Redis.createClient()
 		# @client.on "error", (err) =>
 		#		console.log("Redis connection error to " + @client.host + ":" + @client.port + " - " + err)

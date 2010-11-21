@@ -560,7 +560,7 @@ pathAnim = {
 		
 		// copy and append last point until the length matches the end length
 		endLength = end.length;
-		while (start.length < endLength) {		
+		while (start.length < endLength && start.length > 1) {		
 			
 			//bezier && sixify(start); 
 			slice = [].concat(start).splice(start.length - numParams, numParams);

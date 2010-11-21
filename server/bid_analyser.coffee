@@ -29,6 +29,7 @@ class BidAnalyser
 	getClearingPrice: (memo, callback) ->
 		sharesSold = 0
 		targetShares = 100000
+		clearingPrice = null
 		@database.fetchBidsInChunks((error, bids) ->
 			# In context of ChunkProcessor
 			throw error if error?
@@ -39,17 +40,20 @@ class BidAnalyser
 					key = "$"+String(bid.price)
 					memo.bids[key] ?= 0
 					memo.bids[key] += bid.shares
+					if sharesSold > targetShares
+						clearingPrice = bid.price
 	
 			# Calls this function or the given one if there are no more chunks
 			this.tryNextChunk () ->
 				# No more chunks!
 				if sharesSold > targetShares
-					memo.clearingPrice = price
-					memo.totalBids = @count
-					callback(null, price)
+					if memo?
+						memo.clearingPrice = clearingPrice
+						memo.totalBids = @count
+					callback(null, clearingPrice)
 					return true
 				else
-					callback({message: "Not enough shares to generate a summary!"}, null)
+					callback(null, null)
 			)
 	
 exports.BidAnalyser = BidAnalyser

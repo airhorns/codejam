@@ -1,9 +1,12 @@
+fs = require('fs')
+config = require('yaml').eval(fs.readFileSync('./../public/config.yaml', 'utf8'))
+
 BidDatabase = require('../server/bid_database.js').BidDatabase
 BidAnalyser = require('../server/bid_analyser.js').BidAnalyser
 Redis = require("redis")
 
 db = new BidDatabase()
-analyser = new BidAnalyser(100000, db)
+analyser = new BidAnalyser(config.clearingShares, db)
 express = require('express')
 app = express.createServer()
 
@@ -53,5 +56,23 @@ redisSubscriber.on "message", (channel, message) ->
 
 redisSubscriber.subscribe("bids")
 
-app.listen(3000)
+summaryRunning = false
 
+setInterval(() ->
+	console.log "Trying to get summary", summaryRunning
+	return if summaryRunning
+
+	# Broadcast summary every 2 seconds
+	summaryRunning = true
+	analyser.getClearingPrice null, (error, price) ->
+		console.log(error, price)
+		if error?
+			console.log(error)
+		else
+			if price?
+				console.log("Clearing price is "+price)
+				socket.broadcast JSON.stringify {summary:{clearingPrice: price}}
+			summaryRunning = false
+, 2000)
+
+app.listen(config.webServerPort)

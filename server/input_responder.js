@@ -9,14 +9,16 @@
     child.__super__ = parent.prototype;
   };
   EventEmitter = require('events').EventEmitter;
-  InputResponder = function() {
-    return EventEmitter.apply(this, arguments);
+  InputResponder = function(config) {
+    this.MINBIDVALUE = config.minSharePrice;
+    this.MAXBIDVALUE = config.maxSharePrice;
+    this.MAXBIDATONCE = config.maxSharesPerBid;
+    return this;
   };
   __extends(InputResponder, EventEmitter);
   InputResponder.prototype.MINBIDVALUE = 0;
-  InputResponder.prototype.MAXBIDVALUE = 100;
-  InputResponder.prototype.MAXBIDATONCE = 10000;
-  InputResponder.prototype.TOTALSHARES = 1000;
+  InputResponder.prototype.MAXBIDVALUE = 0;
+  InputResponder.prototype.MAXBIDATONCE = 0;
   InputResponder.prototype.ACCEPTSTRING = "A\r\n";
   InputResponder.prototype.ERRORSTRING = "E\r\n";
   InputResponder.prototype.BIDCLOSEDSTRING = "C\r\n";

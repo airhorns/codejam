@@ -1,0 +1,6 @@
+clearingShares: 10000000
+minSharePrice: 30
+maxSharePrice: 100
+maxSharesPerBid: 100000
+port: 8211
+webServerPort: 3000
