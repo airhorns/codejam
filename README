@@ -1,5 +1,20 @@
 ===== CODE JAM =====
 
+
+==== Running the application ====
+The application consists of 3 components.
+ - Redis database server
+ - C++ "THEDOMINATOR" backend and protocol implementation
+ - Node.js web server + frontent
+
+Ilia knows how to run the Redis server and THEDOMINATOR.
+
+To run the frontend, change to the project directory and run
+`node public/server.js`
+
+To run the reference Node.js backend (which is kinda slow in the face of THEDOMINATOR),
+run `node server/ipo_server.js`
+
 ==== Installation ====
 You should install npm. It's a package manager for node.
 Install these packages using `npm install <package>`
