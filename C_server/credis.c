@@ -76,7 +76,7 @@ void close(int fd) {
 #define CR_MULTIPLEXING_API_SIZE_STR STRINGIFY(CREDIS_MULTIPLEXING_API_SIZE)
 #define CR_USED_MEMORY_HUMAN_SIZE_STR STRINGIFY(CREDIS_USED_MEMORY_HUMAN_SIZE)
 
-#ifdef PRINTDEBUG
+//#ifdef PRINTDEBUG
 /* add -DPRINTDEBUG to CPPFLAGS in Makefile for debug outputs */
 #define DEBUG(...)                                 \
   do {                                             \
@@ -84,9 +84,9 @@ void close(int fd) {
     printf(__VA_ARGS__);                           \
     printf("\n");                                  \
   } while (0)
-#else
-#define DEBUG(...)
-#endif
+//#else
+//#define DEBUG(...)
+//#endif
 
 /* format warnings are GNU C specific */
 #if !__GNUC__
