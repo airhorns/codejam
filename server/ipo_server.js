@@ -21,10 +21,10 @@
       lineEnd = buffer.indexOf("\r\n");
       if (lineEnd) {
         data = buffer.substring(0, lineEnd);
-        buffer = buffer.substring(data.length + 1, buffer.length);
         retStr = responder.parseInput(data);
       }
-      return stream.write(retStr);
+      stream.write(retStr, 'ascii');
+      return (buffer = buffer.substring(data.length + 1, buffer.length));
     });
     return stream.on('end', function() {
       return stream.end();

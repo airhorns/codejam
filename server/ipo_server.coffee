@@ -19,10 +19,9 @@ server = net.createServer (stream) ->
 		lineEnd = buffer.indexOf("\r\n")
 		if lineEnd
       data = buffer.substring(0, lineEnd)
-      buffer = buffer.substring(data.length + 1, buffer.length)
       retStr = responder.parseInput(data)
-			stream.write retStr
-
+			stream.write(retStr, 'ascii')
+			buffer = buffer.substring(data.length + 1, buffer.length)
 		# console.log(hexy.hexy(data))
 		# console.log(hexy.hexy(retStr))
 		# console.log("Message "+data+" being returned "+retStr)

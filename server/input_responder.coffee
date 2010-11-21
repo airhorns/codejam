@@ -31,14 +31,17 @@ class InputResponder extends EventEmitter
 
 	parseSubmission: (split, full) ->
 		shares = parseFloat(split[1])
+		price = parseFloat(split[2])
+
+		unless full? && shares? && price? && split[3]?
+			return @ERRORSTRING
+
 		if shares > @MAXBIDATONCE
 			return @ERRORSTRING
-		
-		price = parseFloat(split[2])
+	
 		if (price < @MINBIDVALUE) || (price > @MAXBIDVALUE)
 			return @ERRORSTRING
 		
-		throw {message: "Bad parse!"} unless full? && shares? && price? && split[3]?
 		this.emit("bidReceived", shares, price, split[3])
 		return @ACCEPTSTRING
 
