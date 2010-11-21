@@ -1,23 +1,44 @@
 ===== CODE JAM =====
 
+Hello Judges!
+
+Our application is a web based application which interacts with some servers in the backend. Start it with start.sh, stop it with stop.sh.You must run these as root.
+To run our application so you can evaluate it, you need to A) configure it, B) start the database server, C) start the server,
+D) start the client, and E) view the website in a webbrowser.
+
+Hopefully we will be able to set everything up so you can do the first four things easily by running the start.sh script in
+the project directory.
+
 
 ==== Running the application ====
 The application consists of 3 components.
  - Redis database server
- - C++ "THEDOMINATOR" backend and protocol implementation
+ - C++ backend and protocol implementation
  - Node.js web server + frontent
 
-Ilia knows how to run the Redis server and THEDOMINATOR.
+To run the Redis backend database, you must run 
+$ sudo redis-server /usr/local/etc/redis.conf
+
+To run the backend, change to the project directory and run
+$ ./C_server/serverTest -p 8211
 
 To run the frontend, change to the project directory and run
-`node public/server.js`
+$ node public/server.js
 
-To run the reference Node.js backend (which is kinda slow in the face of THEDOMINATOR),
-run `node server/ipo_server.js`
+
+==== The other backend ====
+We wrote two backends. One is hacky and fast and written in C++, please use it to evaluate us.
+For style points and for fun, we also wrote a full fledged implementation of the backend in 
+node.js. It puts bids in the database in the exact same manner as the C++ one, so you can view it's
+interactions using the same node.js frontend.
+To run the reference Node.js backend (which is kinda slow in the face of C++ one), run
+$ node server/ipo_server.js
+
 
 ==== Installation ====
 Install node.
 $ wget http://nodejs.org/dist/node-v0.2.5.tar.gz
+$ tar xvpf node-v0.2.5.tar.gz && cd node-v0.2.5
 $ ./configure
 $ make
 $ make install
@@ -39,6 +60,7 @@ In production:
  - socket.io 
  - express
  - jade
+ - yaml
 
 In development
  - nodeunit
