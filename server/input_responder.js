@@ -47,17 +47,15 @@
   InputResponder.prototype.parseSubmission = function(split, full) {
     var _ref, price, shares;
     shares = parseFloat(split[1]);
+    price = parseFloat(split[2]);
+    if (!((typeof full !== "undefined" && full !== null) && (typeof shares !== "undefined" && shares !== null) && (typeof price !== "undefined" && price !== null) && (typeof (_ref = split[3]) !== "undefined" && _ref !== null))) {
+      return this.ERRORSTRING;
+    }
     if (shares > this.MAXBIDATONCE) {
       return this.ERRORSTRING;
     }
-    price = parseFloat(split[2]);
     if ((price < this.MINBIDVALUE) || (price > this.MAXBIDVALUE)) {
       return this.ERRORSTRING;
-    }
-    if (!((typeof full !== "undefined" && full !== null) && (typeof shares !== "undefined" && shares !== null) && (typeof price !== "undefined" && price !== null) && (typeof (_ref = split[3]) !== "undefined" && _ref !== null))) {
-      throw {
-        message: "Bad parse!"
-      };
     }
     this.emit("bidReceived", shares, price, split[3]);
     return this.ACCEPTSTRING;
