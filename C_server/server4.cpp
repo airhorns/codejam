@@ -23,7 +23,7 @@
 
 #include <list>
 
-#include "credis.h"
+#include "hiredis.h"
 
 #if defined(linux)
 #	include <limits.h>
@@ -50,9 +50,10 @@ const string CORRECTSUMMARY("S|SUMMARY\r\n");
 
 //const boost::regex CORRECTREGEX("^B\|[0-9]{1,7}\|[0-9]{1,7}\|\s*.+?\s*$");
 
-REDIS rh;
-int bidID;
-int *ptrBidID = &bidID;
+redisContext *redC;
+redisReply *rreply;
+long long bidID;
+long long *ptrBidID = &bidID;
 
 struct Session
 {
@@ -119,15 +120,17 @@ static void setReply( Session *sessPtr, const char *reply)
 
 static void resetAll(){
 	bidOpen = 1;
-	credis_publish(rh, "commands", "reset");
-	if(credis_flushall(rh)) printf("flushed\n");
-	else printf("should have flushed\n");
-	credis_incr(rh, "global:nextBid", ptrBidID);	
+	redisCommand(redC, "PUBLISH commands reset");
+	redisCommand(redC, "FLUSHALL");
+	rreply = (redisReply*)redisCommand(redC, "INCR global:nextBid");	
+	bidID = rreply->integer;
+	printf("flushed; bid: %i\n",bidID);
+	//freeReplyObject((void*)rreply);
 }
 
 static bool parseRequest(Session *sptr)
 {
-//	printf("%i\t%s\n",sptr->rbytes, sptr->readbuf);
+	printf("%i\t%s\n",sptr->rbytes, sptr->readbuf);
 	
 //	if( sptr->readbuf[0] == 'C' ) sptr->readbuf[13] = '\0'; //workaround the trailing ascii 1
 //	if( sptr->readbuf[0] == 'S' ) sptr->readbuf[11] = '\0';
@@ -147,11 +150,12 @@ static bool parseRequest(Session *sptr)
 	}
 	int strlength, firstSeparator,secondSeparator,thirdSeparator, length1, length2, val1, val2, bidNameLen;
 	char bidderName[60];
+	char fixedBidderName[32];
+	char *buf;
 	int strStart = 0, ii=0;
 	switch(sptr->readbuf[0] ){
-		case ('B') : 
+		case ('B') :
 			//TODO: input parsing
-		//	string input(sptr->readbuf, sptr->rbytes);
 			strlength = sptr->rbytes;
 			firstSeparator = input.find("|",0);
 			secondSeparator = input.find("|",firstSeparator+1);
@@ -181,7 +185,6 @@ static bool parseRequest(Session *sptr)
 					output = ERRORSTR;
 					break;
 			}
-
 			strStart=0;
 			strcpy(bidderName, input.substr(thirdSeparator+1, bidNameLen-3).c_str()); //the -2 compensates for the lasr \r\n
 			while(bidderName[strStart] == ' ') strStart++; 
@@ -189,38 +192,66 @@ static bool parseRequest(Session *sptr)
 				(bidderName[strlen(bidderName)-1] == '\r') || 
 				(bidderName[strlen(bidderName)-1] == '\n')) 
 					bidderName[strlen(bidderName)-1] = '\0'; //strips the trailing whitespaces from bidderName
-			char fixedBidderName[32];
 			for(ii=0;ii<32;ii++)fixedBidderName[ii]='\0';
 			for(ii = strStart;bidderName[ii] != '\0' ; ii++) fixedBidderName[ii-strStart] = bidderName[ii];	
-			
-			char request[256];
-			snprintf (request, (sizeof(request) - 1) , "bid_%i \"shares %i price %i bidder %s time %i\"", bidID, val1, val2, fixedBidderName, time(0)); //request string
-			printf("%s\n",request);
 			char ***ignored; //output value of hmset; is ignored
-			credis_incr(rh, "global:nextBid", ptrBidID);	
-			credis_hmset(rh, request, ignored);
-
-			snprintf (request, (sizeof(request) - 1) , "%i", bidID);
-			credis_sadd(rh, "bIds" ,request);
+			rreply = (redisReply*)redisCommand(redC, "INCR global:nextBid");	
+			bidID = rreply->integer;
 			
-			snprintf(request, (sizeof(request) - 1) , "{bId: %i, shares: %i, price: %i, bidder: \"%s\", time: %i}", bidID, val1, val2, fixedBidderName,time(0)); //request string
-			credis_publish(rh, "bids", request); //channel = bids.
-			
-
-			
+			freeReplyObject((void*)rreply);
+			char *str[12];
+			str[0]="HMSET";
+			str[2]="shares";
+			str[4]="price";
+			str[6]="bidder";
+			str[8]="time";
+			str[10]="\0";
+			str[11]="\0";
+			sprintf(str[1], "bid_%lli", bidID);
+			printf("1\n");
+			str[3] = (char*)malloc(sizeof(char)*12);
+			sprintf(str[3], "%i", val1);
+			printf("3\n");
+			str[5] = (char*)malloc(sizeof(char)*12);
+			sprintf(str[5], "%i", val2);
+			printf("5\n");
+			str[7] = (char*)malloc(sizeof(char)*32);
+			sprintf(str[7], "\"%s\"", fixedBidderName);
+			printf("7\n");
+			str[9] = (char*)malloc(sizeof(char)*18);
+			sprintf(str[9], "%i", time(0));
+			printf("ok\n");
+			redisCommand(redC, "%s %s %s %s %s %s %s %s %s %s", str[0],str[1],str[2],str[3],str[4],str[5],str[6],str[7],str[8],str[9]);
+			str[2] = (char*)malloc(sizeof(char)*10);
+			str[0]="SADD";
+			str[1]="bIds";
+			str[2]="{bId:";
+			str[4]="shares:";
+			str[6]="price:";
+			str[8]="bidder:";
+			str[10]="time:"; 
+			sprintf(str[2], "%i", bidID);
+			redisCommand(redC, "SADD bIds %s" ,str[2]);
+			printf("sendsecond\n");
+			sprintf(buf,  "PUBLISH bids {bId: %lli, shares: %i, price: %i, bidder: \"%s\", time: %i}",  bidID, val1, val2, fixedBidderName,time(0));
+			redisCommand(redC, "%s", buf);
+//			redisCommand(redC, "PUBLISH bids {bId: %lli, shares: %i, price: %i, bidder: \"%s\", time: %i}",  bidID, val1, val2, fixedBidderName,time(0)); //channel = bids.
+			printf("before free\n");
+			free(str[1]);
+			//for(ii=0;ii<10;ii++) free(buf[ii]);
 			output = ACCEPTSTR;
 			break;
 		case ('C'):
 			if( strcmp("C|TERMINATE\r\n", sptr->readbuf) == 0 ) { //the wierd char ascii 1 we get after performing a server reset
 				output = ACCEPTSTR;
 				bidOpen = 0;
-				credis_publish(rh, "commands", "close"); //channel = bids.
+				redisCommand(redC, "PUBLISH commands close"); //channel = bids.
 			} else{
 				output = ERRORSTR;
 			}break;
 		case('S'):
 			if( strcmp("S|SUMMARY\r\n", sptr->readbuf) == 0 ){
-				credis_publish(rh, "commands", "summary");
+				redisCommand(redC, "PUBLISH commands summary");
 				printStatus();
 				output = ACCEPTSTR;
 			}else{
@@ -394,8 +425,7 @@ int main(int argc, char *argv[])
     }
   }
   bidID = 0;
-  
-  rh = credis_connect(NULL,6379,2000); //2000 s timeout
+  redC = redisConnect((char*)"127.0.0.1", 6379); 
 
   // Create listening socket
   int listeningSock = socket( AF_INET, SOCK_STREAM, IPPROTO_TCP);
