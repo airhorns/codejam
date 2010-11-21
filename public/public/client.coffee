@@ -100,11 +100,12 @@ uki(
 	}]
 ).attachTo window, '1000 600'
 
-bidsChart = new Highcharts.Chart(
+bidsDetailChart = new Highcharts.Chart(
 	chart:
 		renderTo: 'bidDisplay'
-		defaultSeriesType: 'spline'
 		marginRight: 10
+		marginTop: 10
+		reflow: false
 	title:
 		text: 'Bids'
 		style:
@@ -131,6 +132,7 @@ bidsChart = new Highcharts.Chart(
 		enabled: false
 	series: [{
 		name: 'Bids'
+		type: 'scatter'
 		data: []
 	}]
 )
@@ -201,12 +203,8 @@ uki('#bidderSearch').bind 'keyup click', () ->
 		hlt = ''
 		table.data(model.items)
 
-socket = new io.Socket("localhost")
-socket.on 'connect', () ->
-	console.log("Socket established.")
-
-renderTimeout = 400
-waitingRenderThreshold = 100
+renderTimeout = 300
+waitingRenderThreshold = 200
 toBeRendered = []
 renderTimer = false
 
@@ -223,7 +221,6 @@ updateTable = () ->
 	if bidsChart?
 		for row in toBeRendered
 			bidsChart.series[0].addPoint([row[4].getTime(), row[3]], false, false)
-		bidsChart.redraw()
 
 	table.data(model.items)
 	toBeRendered = []
@@ -232,8 +229,13 @@ stopRenderTimer = () ->
 	if renderTimer
 		clearTimeout(renderTimer)
 		renderTimer = false
+socket = new io.Socket("localhost")
+
+socket.on 'connect', () ->
+	console.log("Socket established.")
 
 socket.on 'message', (data) ->
+	console.log(data)
 	try
 		data = JSON.parse(data)
 	catch error
@@ -255,15 +257,6 @@ socket.on 'disconnect', () ->
 
 socket.connect()
 
-# Graphs
-uki("#bidFrequency").bind "layout", () ->
-	xs = []
-	ys = []
-	for x, y of model.frequencies
-		xs.push y
-		ys.push x
-	console.log(xs)
-	console.log(ys)
-setTimeout(() ->
-	uki("#bidFrequency").trigger("layout")
-, 1000)
+setInterval(() ->
+	bidsChart.redraw()
+, 2000)

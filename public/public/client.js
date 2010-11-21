@@ -1,5 +1,5 @@
 (function() {
-  var BidModel, bidCountInput, bidsChart, bidsReceived, formatHlted, formatPrice, hlt, lastQuery, model, renderTimeout, renderTimer, resetHeaders, socket, stopRenderTimer, table, toBeRendered, updateTable, waitingRenderThreshold;
+  var BidModel, bidCountInput, bidsDetailChart, bidsReceived, formatHlted, formatPrice, hlt, lastQuery, model, renderTimeout, renderTimer, resetHeaders, socket, stopRenderTimer, table, toBeRendered, updateTable, waitingRenderThreshold;
   var __extends = function(child, parent) {
     var ctor = function(){};
     ctor.prototype = parent.prototype;
@@ -7,7 +7,7 @@
     child.prototype.constructor = child;
     if (typeof parent.extended === "function") parent.extended(child);
     child.__super__ = parent.prototype;
-  }, __hasProp = Object.prototype.hasOwnProperty;
+  };
   hlt = '';
   formatHlted = function(t) {
     return t;
@@ -147,11 +147,12 @@
       }
     ]
   }).attachTo(window, '1000 600');
-  bidsChart = new Highcharts.Chart({
+  bidsDetailChart = new Highcharts.Chart({
     chart: {
       renderTo: 'bidDisplay',
-      defaultSeriesType: 'spline',
-      marginRight: 10
+      marginRight: 10,
+      marginTop: 10,
+      reflow: false
     },
     title: {
       text: 'Bids',
@@ -189,6 +190,7 @@
     series: [
       {
         name: 'Bids',
+        type: 'scatter',
         data: []
       }
     ]
@@ -272,12 +274,8 @@
       return table.data(model.items);
     }
   });
-  socket = new io.Socket("localhost");
-  socket.on('connect', function() {
-    return console.log("Socket established.");
-  });
-  renderTimeout = 400;
-  waitingRenderThreshold = 100;
+  renderTimeout = 300;
+  waitingRenderThreshold = 200;
   toBeRendered = [];
   renderTimer = false;
   bidCountInput = uki('#bidsReceived');
@@ -295,7 +293,6 @@
         row = _ref[_i];
         bidsChart.series[0].addPoint([row[4].getTime(), row[3]], false, false);
       }
-      bidsChart.redraw();
     }
     table.data(model.items);
     return (toBeRendered = []);
@@ -306,7 +303,12 @@
       return (renderTimer = false);
     }
   };
+  socket = new io.Socket("localhost");
+  socket.on('connect', function() {
+    return console.log("Socket established.");
+  });
   socket.on('message', function(data) {
+    console.log(data);
     try {
       data = JSON.parse(data);
     } catch (error) {
@@ -326,21 +328,7 @@
     return console.log("Socket disconnected!");
   });
   socket.connect();
-  uki("#bidFrequency").bind("layout", function() {
-    var _ref, x, xs, y, ys;
-    xs = [];
-    ys = [];
-    _ref = model.frequencies;
-    for (x in _ref) {
-      if (!__hasProp.call(_ref, x)) continue;
-      y = _ref[x];
-      xs.push(y);
-      ys.push(x);
-    }
-    console.log(xs);
-    return console.log(ys);
-  });
-  setTimeout(function() {
-    return uki("#bidFrequency").trigger("layout");
-  }, 1000);
+  setInterval(function() {
+    return bidsChart.redraw();
+  }, 2000);
 }).call(this);
