@@ -9,23 +9,22 @@
     child.__super__ = parent.prototype;
   };
   EventEmitter = require('events').EventEmitter;
-  InputResponder = function() {
-    return EventEmitter.apply(this, arguments);
+  InputResponder = function(config) {
+    this.MINBIDVALUE = config.minSharePrice;
+    this.MAXBIDVALUE = config.maxSharePrice;
+    this.MAXBIDATONCE = config.maxSharesPerBid;
+    return this;
   };
   __extends(InputResponder, EventEmitter);
   InputResponder.prototype.MINBIDVALUE = 0;
-  InputResponder.prototype.MAXBIDVALUE = 100;
-  InputResponder.prototype.MAXBIDATONCE = 10000;
-  InputResponder.prototype.TOTALSHARES = 1000;
+  InputResponder.prototype.MAXBIDVALUE = 0;
+  InputResponder.prototype.MAXBIDATONCE = 0;
   InputResponder.prototype.ACCEPTSTRING = "A\r\n";
   InputResponder.prototype.ERRORSTRING = "E\r\n";
   InputResponder.prototype.BIDCLOSEDSTRING = "C\r\n";
   InputResponder.prototype.acceptingBids = true;
   InputResponder.prototype.parseInput = function(inputString) {
     var _ref, stringSplit;
-    if (!(this.acceptingBids)) {
-      return this.BIDCLOSEDSTRING;
-    }
     inputString = inputString.replace(/[\s\u0000\u0012]*$/mig, "").replace(/^[\s\u0000\u0012]*/mig, "");
     stringSplit = inputString.split("|");
     if (!((typeof (_ref = stringSplit[0]) !== "undefined" && _ref !== null) && typeof stringSplit[0] === "string")) {
@@ -46,6 +45,9 @@
   };
   InputResponder.prototype.parseSubmission = function(split, full) {
     var _ref, price, shares;
+    if (!(this.acceptingBids)) {
+      return this.BIDCLOSEDSTRING;
+    }
     shares = parseFloat(split[1]);
     price = parseFloat(split[2]);
     if (!((typeof full !== "undefined" && full !== null) && (typeof shares !== "undefined" && shares !== null) && (typeof price !== "undefined" && price !== null) && (typeof (_ref = split[3]) !== "undefined" && _ref !== null))) {

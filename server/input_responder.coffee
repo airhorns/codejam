@@ -1,19 +1,20 @@
 EventEmitter = require('events').EventEmitter
 class InputResponder extends EventEmitter
 	MINBIDVALUE: 0
-	MAXBIDVALUE: 100
-	MAXBIDATONCE: 10000
-	TOTALSHARES: 1000
+	MAXBIDVALUE: 0
+	MAXBIDATONCE: 0
 
 	ACCEPTSTRING: "A\r\n"
 	ERRORSTRING: "E\r\n"
 	BIDCLOSEDSTRING: "C\r\n"
-
+	constructor: (config) ->
+		@MINBIDVALUE = config.minSharePrice
+		@MAXBIDVALUE = config.maxSharePrice
+		@MAXBIDATONCE = config.maxSharesPerBid
 	# Start up accepting bids.
 	acceptingBids: true
 	parseInput: (inputString) ->
 		# return error: not acepting bids anymore
-		return @BIDCLOSEDSTRING unless @acceptingBids
 
 		# Trim input string to get rid of any shenanigans
 		inputString = inputString.replace(/[\s\u0000\u0012]*$/mig, "").replace(/^[\s\u0000\u0012]*/mig, "")
@@ -30,6 +31,8 @@ class InputResponder extends EventEmitter
 			else return @ERRORSTRING
 
 	parseSubmission: (split, full) ->
+		return @BIDCLOSEDSTRING unless @acceptingBids
+		
 		shares = parseFloat(split[1])
 		price = parseFloat(split[2])
 

@@ -12,16 +12,21 @@
     this.processCallback = processCallback;
     this.client = client;
     this.client.scard("bIds", __bind(function(error, count) {
+      this.count = count;
       if (typeof error !== "undefined" && error !== null) {
         throw error;
       }
       console.log("" + (count) + " bids total.");
-      this.totalChunks = Math.ceil(count / this.chunkSize);
-      return this.getNextChunk();
+      if (count > 0) {
+        this.totalChunks = Math.ceil(count / this.chunkSize) - 1;
+        return this.getNextChunk();
+      } else {
+        return this.processCallback(null, null);
+      }
     }, this));
     return this;
   };
-  BidChunkProcessor.prototype.chunkSize = 100;
+  BidChunkProcessor.prototype.chunkSize = 300;
   BidChunkProcessor.prototype.currentChunk = 0;
   BidChunkProcessor.prototype.count = 0;
   BidChunkProcessor.prototype.processing = true;
@@ -33,6 +38,9 @@
       var bId, bidder, formatted, price, shares, time;
       if (!(typeof reply !== "undefined" && reply !== null)) {
         this.processing = false;
+        this.processCallback({
+          msg: "no more records"
+        });
         return false;
       }
       formatted = [];
@@ -70,11 +78,11 @@
     } else {
       this.processing = false;
       if (typeof errorCallback !== "undefined" && errorCallback !== null) {
-        return errorCallback();
+        return errorCallback.call(this);
       }
     }
   };
-  BidDatabase = function(config, responder) {
+  BidDatabase = function(responder) {
     var _this;
     _this = this;
     this.reInitialize = function(){ return BidDatabase.prototype.reInitialize.apply(_this, arguments); };
@@ -89,8 +97,8 @@
     responder.on("bidReceived", this.addBid);
     return responder.on("resetDatabase", this.reInitialize);
   };
-  BidDatabase.prototype.addBid = function(shares, price, bidder) {
-    console.log("Adding bid", shares, price, bidder);
+  BidDatabase.prototype.addBid = function(shares, price, bidder, open) {
+    console.log("Adding bid", shares, price);
     return this.getBidId(__bind(function(error, bId) {
       var t;
       t = new Date().getTime();

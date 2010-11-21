@@ -2,7 +2,7 @@ Redis = require("redis")
 # Redis.debug_mode = true
 
 class BidChunkProcessor
-	chunkSize: 100
+	chunkSize: 300
 	currentChunk: 0
 	count: 0
 	processing: true
@@ -10,12 +10,16 @@ class BidChunkProcessor
 		@processCallback = processCallback
 		@client = client
 		@client.scard("bIds", (error, count) =>
+			@count = count
 			throw error if error?
 			console.log("#{count} bids total.")
-			# Calculate the total number of chunks
-			@totalChunks = Math.ceil(count/@chunkSize)
-			# Start pagination of results
-			this.getNextChunk()
+			if count > 0
+				# Calculate the total number of chunks
+				@totalChunks = Math.ceil(count/@chunkSize)-1
+				# Start pagination of results
+				this.getNextChunk()
+			else
+				@processCallback(null, null)
 		)
 
 	getNextChunk: () =>
@@ -30,6 +34,7 @@ class BidChunkProcessor
 			(err, reply) =>
 				if !reply?
 					@processing = false
+					@processCallback({msg: "no more records"})
 					return false
 
 				formatted = []
@@ -54,10 +59,10 @@ class BidChunkProcessor
 			this.getNextChunk()
 		else
 			@processing = false
-			errorCallback() if errorCallback?
+			errorCallback.call(this) if errorCallback?
 
 class BidDatabase
-	constructor: (config, responder) ->
+	constructor: (responder) ->
 		@client = Redis.createClient()
 		# @client.on "error", (err) =>
 		#		console.log("Redis connection error to " + @client.host + ":" + @client.port + " - " + err)
@@ -67,8 +72,8 @@ class BidDatabase
 		responder.on "bidReceived", this.addBid
 		responder.on "resetDatabase", this.reInitialize
 
-	addBid: (shares, price, bidder) =>
-		console.log("Adding bid", shares, price, bidder)
+	addBid: (shares, price, bidder, open) =>
+		console.log("Adding bid", shares, price)
 		this.getBidId((error, bId) =>
 			# Store bids as hashes keyed by their bid id in a bid_ namespace.
 			# @client.hmset("bid_#{bId}", "shares", shares, "price", price, "bidder", bidder, "time", new Date().getTime(), -> )

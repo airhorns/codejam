@@ -1,10 +1,12 @@
 (function() {
-  var BidAnalyser, BidDatabase, Redis, analyser, app, db, express, io, redisSubscriber, socket;
+  var BidAnalyser, BidDatabase, Redis, analyser, app, config, db, express, fs, io, redisSubscriber, socket, summaryRunning;
+  fs = require('fs');
+  config = require('yaml').eval(fs.readFileSync('./../public/config.yaml', 'utf8'));
   BidDatabase = require('../server/bid_database.js').BidDatabase;
   BidAnalyser = require('../server/bid_analyser.js').BidAnalyser;
   Redis = require("redis");
   db = new BidDatabase();
-  analyser = new BidAnalyser(100000, db);
+  analyser = new BidAnalyser(config.clearingShares, db);
   express = require('express');
   app = express.createServer();
   app.configure(function() {
@@ -56,5 +58,28 @@
     return socket.broadcast(message);
   });
   redisSubscriber.subscribe("bids");
-  app.listen(3000);
+  summaryRunning = false;
+  setInterval(function() {
+    if (summaryRunning) {
+      return null;
+    }
+    summaryRunning = true;
+    return analyser.getClearingPrice(null, function(error, price) {
+      if (typeof error !== "undefined" && error !== null) {
+        return console.log(error);
+      } else {
+        if (typeof price !== "undefined" && price !== null) {
+          socket.broadcast(JSON.stringify({
+            summary: {
+              clearingPrice: price
+            }
+          }));
+        } else {
+          console.log("Unable to get clearing price!", error, price);
+        }
+        return (summaryRunning = false);
+      }
+    });
+  }, 3000);
+  app.listen(config.webServerPort);
 }).call(this);

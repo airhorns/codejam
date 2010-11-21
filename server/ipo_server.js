@@ -1,6 +1,7 @@
 (function() {
-  var BidAnalyser, BidDatabase, CLEARINGSHARES, InputResponder, analyser, database, hexy, net, responder, server;
-  CLEARINGSHARES = 1000000;
+  var BidAnalyser, BidDatabase, InputResponder, analyser, config, database, fs, hexy, net, responder, server;
+  fs = require('fs');
+  config = require('yaml').eval(fs.readFileSync('./../public/config.yaml', 'utf8'));
   require.paths.unshift('.');
   hexy = require("hexy");
   net = require('net');
@@ -40,10 +41,10 @@
       return stream.end();
     });
   });
-  responder = new InputResponder();
+  responder = new InputResponder(config);
   database = new BidDatabase();
   database.watchResponder(responder);
-  analyser = new BidAnalyser(CLEARINGSHARES, database, responder);
+  analyser = new BidAnalyser(config.clearingShares, database, responder);
   server.maxConnections = 10000;
-  server.listen(8124);
+  server.listen(config.port);
 }).call(this);
