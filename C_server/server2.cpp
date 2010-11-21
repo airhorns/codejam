@@ -34,8 +34,7 @@
 #define TOTALSHARES 1000
 #define ACCEPTSTR "A\r\n"
 
-//#define ERRORSTR "E\r\n"
-#define ERRORSTR "HTTP/1.0 200 OK\nContent-Type: text/html; charset=ISO-8859-1\nConnection: close"
+#define ERRORSTR "E\r\n"
 
 #define CLOSESTR "C\r\n"
 #define RESETSTR "R\r\n"
@@ -259,11 +258,14 @@ void run_server(int listeningSocket)
 		Session *sessPtr = *it;
 		int n;
 		if( FD_ISSET( sessPtr->sockfd, &rmask)) {
+//reading:
 		  int to_read = sizeof( sessPtr->readbuf) - sessPtr->rbytes;
 		  n = read( sessPtr->sockfd, 
 				sessPtr->readbuf + sessPtr->rbytes,
 				to_read);
-
+		  if( n == (-1)) continue;
+		  sessPtr->rbytes += n;
+		  if((sessPtr->rbytes < 2) || (sessPtr->readbuf[(sessPtr->rbytes)-1] != '\n')||(sessPtr->readbuf[(sessPtr->rbytes)-2] != '\r')) continue;  
 		  if( n == 0) {
 			// In theory we should check for an error here, but it's
 			// for later
@@ -271,12 +273,13 @@ void run_server(int listeningSocket)
 //			printf("Session with socket %d is closed (errno %d (%s))\n",
 //			   sessPtr->sockfd, errno, strerror(errno));
 		  } else {
+//			sleep(2);
+//			if( to_read != sizeof( sessPtr->readbuf) - sessPtr->rbytes) goto reading;
 			// Try to parse the request. For now, we assume request is
 			// done when there is a newline in the string. If the
 			// buffer is full and still no request is found - it's an
 			// error, and error message is sent to the client
-			
-			sessPtr->rbytes += n;
+						
 
 			if( parseRequest(sessPtr)) {
 			  ;//setReply( sessPtr, GoodReply);
