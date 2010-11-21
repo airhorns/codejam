@@ -14,9 +14,6 @@ class BidAnalyser
 		obj.status = if @database.acceptingBids then "OPEN" else "CLOSED"
 		
 		this.getClearingPrice(obj,(error, price) =>
-			console.log(error)
-			console.log(price)
-			console.log(obj)
 			throw error if error?
 			this.outputSummary(obj) if output?
 			callback(obj) if callback?
@@ -30,6 +27,8 @@ class BidAnalyser
 			console.log "#{price}     #{shares}"
 
 	getClearingPrice: (memo, callback) ->
+		sharesSold = 0
+		targetShares = 100000
 		@database.fetchBidsInChunks((error, data) ->
 			# In context of ChunkProcessor
 			throw error if error?
@@ -49,16 +48,16 @@ class BidAnalyser
 						callback {message:"Can't parse out the price/share information from the database!"}, null
 						return false
 				
-				# Calls this function or the given one if there are no more chunks
-				this.tryNextChunk () ->
-					# No more chunks!
-					if sharesSold > targetShares
-						memo.clearingPrice = price
-						memo.totalBids = @count
-						callback(null, price)
-						return true
-					else
-						callback({message: "Not enough shares to generate a summary!"}, null)
+			# Calls this function or the given one if there are no more chunks
+			this.tryNextChunk () ->
+				# No more chunks!
+				if sharesSold > targetShares
+					memo.clearingPrice = price
+					memo.totalBids = @count
+					callback(null, price)
+					return true
+				else
+					callback({message: "Not enough shares to generate a summary!"}, null)
 			)
 	
 exports.BidAnalyser = BidAnalyser

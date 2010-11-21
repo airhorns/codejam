@@ -28,9 +28,6 @@
     };
     obj.status = this.database.acceptingBids ? "OPEN" : "CLOSED";
     return this.getClearingPrice(obj, __bind(function(error, price) {
-      console.log(error);
-      console.log(price);
-      console.log(obj);
       if (typeof error !== "undefined" && error !== null) {
         throw error;
       }
@@ -56,12 +53,14 @@
     return _result;
   };
   BidAnalyser.prototype.getClearingPrice = function(memo, callback) {
+    var sharesSold, targetShares;
+    sharesSold = 0;
+    targetShares = 100000;
     return this.database.fetchBidsInChunks(function(error, data) {
-      var _result, key, price, shares;
+      var key, price, shares;
       if (typeof error !== "undefined" && error !== null) {
         throw error;
       }
-      _result = [];
       while ((typeof data !== "undefined" && data !== null) && data.length > 0) {
         shares = parseFloat(data.pop().toString('ascii'));
         price = parseFloat(data.pop().toString('ascii'));
@@ -78,20 +77,19 @@
             return false;
           }
         }
-        this.tryNextChunk(function() {
-          if (sharesSold > targetShares) {
-            memo.clearingPrice = price;
-            memo.totalBids = this.count;
-            callback(null, price);
-            return true;
-          } else {
-            return callback({
-              message: "Not enough shares to generate a summary!"
-            }, null);
-          }
-        });
       }
-      return _result;
+      return this.tryNextChunk(function() {
+        if (sharesSold > targetShares) {
+          memo.clearingPrice = price;
+          memo.totalBids = this.count;
+          callback(null, price);
+          return true;
+        } else {
+          return callback({
+            message: "Not enough shares to generate a summary!"
+          }, null);
+        }
+      });
     });
   };
   exports.BidAnalyser = BidAnalyser;

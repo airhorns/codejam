@@ -26,7 +26,7 @@
   BidChunkProcessor.prototype.count = 0;
   BidChunkProcessor.prototype.getNextChunk = function() {
     return this.client.sort(["bIds", "BY", "bid_*->price", "DESC", "LIMIT", this.currentChunk * this.chunkSize, this.chunkSize, "GET", "bid_*->price", "GET", "bid_*->shares"], __bind(function(err, reply) {
-      this.processCallback.call(arguments);
+      this.processCallback(err, reply);
       return this.currentChunk += 1;
     }, this));
   };

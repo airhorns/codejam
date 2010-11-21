@@ -23,7 +23,7 @@ class BidChunkProcessor
 									"GET", "bid_*->price",
 									"GET", "bid_*->shares"],
 									(err, reply) =>
-										@processCallback.call(arguments)
+										@processCallback(err, reply)
 										@currentChunk += 1
 		)
 
