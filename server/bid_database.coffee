@@ -5,6 +5,7 @@ class BidChunkProcessor
 	chunkSize: 100
 	currentChunk: 0
 	count: 0
+	processing: true
 	constructor: (client, processCallback) ->
 		@processCallback = processCallback
 		@client = client
@@ -18,6 +19,7 @@ class BidChunkProcessor
 		)
 
 	getNextChunk: () =>
+		return false unless @processing
 		@client.sort(["bIds", "BY", "bid_*->price", "DESC",
 									"LIMIT", @currentChunk * @chunkSize, @chunkSize,
 									"GET", "#",
@@ -25,23 +27,40 @@ class BidChunkProcessor
 									"GET", "bid_*->price",
 									"GET", "bid_*->bidder",
 									"GET", "bid_*->time"],
-									(err, reply) =>
-										@processCallback(err, reply)
-										@currentChunk += 1
+			(err, reply) =>
+				if !reply?
+					@processing = false
+					return false
+
+				formatted = []
+				while reply.length > 0
+					throw {message: "Weird number of replies returned"} if reply.length < 5
+					bId = parseInt(reply.shift().toString('ascii'))
+					shares = parseInt(reply.shift().toString('ascii'))
+					price = parseInt(reply.shift().toString('ascii'))
+					bidder = reply.shift().toString('ascii')
+					time = reply.shift().toString('ascii')
+					formatted.push {bId: bId, shares:shares, price:price, bidder:bidder, time: time}
+				if formatted.length > 0
+					reply = formatted
+				else
+					reply = []
+				@processCallback(err, reply)
 		)
 
 	tryNextChunk: (errorCallback) =>
 		unless @currentChunk >= @totalChunks
+			@currentChunk += 1
 			this.getNextChunk()
 		else
+			@processing = false
 			errorCallback() if errorCallback?
-		return false
 
 class BidDatabase
 	constructor: (config, responder) ->
 		@client = Redis.createClient()
 		# @client.on "error", (err) =>
-		# 	console.log("Redis connection error to " + @client.host + ":" + @client.port + " - " + err)
+		#		console.log("Redis connection error to " + @client.host + ":" + @client.port + " - " + err)
 		this.watchResponder(responder) if responder?
 
 	watchResponder: (responder) ->

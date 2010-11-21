@@ -1,5 +1,5 @@
 (function() {
-  var BidModel, formatHlted, formatPrice, hlt, lastQuery, model, renderTimeout, renderTimer, resetHeaders, socket, stopRenderTimer, table, toBeRendered, updateTable, waitingRenderThreshold;
+  var BidModel, bidCountInput, bidsChart, bidsReceived, formatHlted, formatPrice, hlt, lastQuery, model, renderTimeout, renderTimer, resetHeaders, socket, stopRenderTimer, table, toBeRendered, updateTable, waitingRenderThreshold;
   var __extends = function(child, parent) {
     var ctor = function(){};
     ctor.prototype = parent.prototype;
@@ -7,7 +7,7 @@
     child.prototype.constructor = child;
     if (typeof parent.extended === "function") parent.extended(child);
     child.__super__ = parent.prototype;
-  };
+  }, __hasProp = Object.prototype.hasOwnProperty;
   hlt = '';
   formatHlted = function(t) {
     return t;
@@ -20,35 +20,43 @@
   };
   uki({
     view: 'Box',
-    rect: '1000 1000',
+    rect: '1000 600',
     minSize: '800 400',
-    anchors: 'top left right width',
+    anchors: 'top left right bottom',
     childViews: [
       {
         view: 'Box',
         id: 'headerBox',
-        rect: '1000 100',
+        rect: '1000 40',
         background: 'theme(panel)',
         anchors: 'top left right width',
         childViews: [
           {
             view: 'Label',
-            rect: '20 35 100 24',
-            html: '<span style="letter-spacing: 2px; font-family: \'Lobster\', arial, serif; font-size: 60px; font-weight: bold; text-shadow: #FFF 0px 1px 1px">Dutch IPO</span>',
+            rect: '10 0 100 40',
+            html: '<span style="letter-spacing: 2px; font-family: \'Lobster\', arial, serif; font-size: 30px; font-weight: bold; text-shadow: #FFF 0px 1px 1px">Dutch IPO</span>',
             anchors: "top left"
           }, {
             view: 'Label',
-            rect: '200 35 100 24',
-            html: '<span style="font-size: 30px;">Bids Recieved</span>'
+            rect: '200 15 100 20',
+            html: '<span style="font-size: 15px;">Bids Recieved</span>',
+            anchors: 'top left right width'
+          }, {
+            view: 'TextField',
+            rect: '300 15 20 20',
+            anchors: 'top left width',
+            value: "0",
+            id: 'bidsReceived'
           }, {
             view: 'Label',
-            rect: '700 35 100 24',
-            html: '<span style="font-size: 30px;">Clearing Price</span>'
+            rect: '700 15 100 20',
+            html: '<span style="font-size: 15px;">Clearing Price</span>',
+            anchors: 'top left right width'
           }
         ]
       }, {
         view: 'HSplitPane',
-        rect: '0 101 1000 899',
+        rect: '0 41 1000 559',
         anchors: 'left top right bottom',
         handlePosition: 475,
         leftMin: 475,
@@ -60,23 +68,25 @@
               view: 'TextField',
               rect: '5 5 465 22',
               anchors: 'left top right',
-              placeholder: 'search'
+              placeholder: 'bidder search',
+              id: 'bidderSearch'
             }, {
               view: 'Table',
-              rect: '0 30 475 869',
+              rect: '0 30 475 529',
               minSize: '0 200',
               anchors: 'left top right bottom',
               columns: [
                 {
                   view: 'table.NumberColumn',
                   label: 'ID',
+                  resizable: true,
                   width: 60
                 }, {
                   view: 'table.CustomColumn',
                   label: 'Bidder',
                   resizable: true,
-                  minWidth: 100,
-                  width: 250,
+                  minWidth: 50,
+                  width: 100,
                   formatter: formatHlted
                 }, {
                   view: 'table.CustomColumn',
@@ -89,8 +99,14 @@
                   view: 'table.CustomColumn',
                   label: 'Shares',
                   resizable: true,
-                  width: 50,
+                  minWidth: 50,
                   width: 75
+                }, {
+                  view: 'table.CustomColumn',
+                  label: 'Time',
+                  resizable: true,
+                  minWidth: 100,
+                  width: 150
                 }
               ],
               style: {
@@ -112,24 +128,89 @@
               }
             }
           ]
-        }
+        },
+        rightChildViews: [
+          {
+            view: 'Box',
+            rect: '0 0 518 100',
+            anchors: 'top left right width',
+            background: 'theme(panel)',
+            id: 'bidFrequency'
+          }, {
+            view: 'Box',
+            rect: '0 100 518 429',
+            anchors: 'top left right width bottom',
+            background: 'theme(panel)',
+            id: 'bidDisplay'
+          }
+        ]
       }
     ]
-  }).attachTo(window, '1000 1000');
+  }).attachTo(window, '1000 600');
+  bidsChart = new Highcharts.Chart({
+    chart: {
+      renderTo: 'bidDisplay',
+      defaultSeriesType: 'spline',
+      marginRight: 10
+    },
+    title: {
+      text: 'Bids',
+      style: {
+        margin: '10px 100px 0 0'
+      }
+    },
+    xAxis: {
+      type: 'datetime',
+      tickPixelInterval: 150
+    },
+    yAxis: {
+      title: {
+        text: 'Value'
+      },
+      plotLines: [
+        {
+          value: 0,
+          width: 1,
+          color: '#808080'
+        }
+      ]
+    },
+    tooltip: {
+      formatter: function() {
+        return '<b>' + this.series.name + '</b><br/>' + Highcharts.dateFormat('%Y-%m-%d %H:%M:%S', this.x) + '<br/>' + Highcharts.numberFormat(this.y, 2);
+      }
+    },
+    legend: {
+      enabled: false
+    },
+    exporting: {
+      enabled: false
+    },
+    series: [
+      {
+        name: 'Bids',
+        data: []
+      }
+    ]
+  });
   BidModel = function() {
     return Searchable.apply(this, arguments);
   };
   __extends(BidModel, Searchable);
   BidModel.prototype.init = function(data) {
     this.items = (typeof this.items !== "undefined" && this.items !== null) ? this.items : [];
+    this.frequencies = {};
     return this.addItems(data);
   };
   BidModel.prototype.addItems = function(new_items) {
-    var _i, _len, _ref, row;
+    var _i, _len, _ref, f, row;
     _ref = new_items;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       row = _ref[_i];
       row.searchIndex = row[1].toLowerCase();
+      f = String(row[4].getMinutes());
+      this.frequencies[f] = (typeof this.frequencies[f] !== "undefined" && this.frequencies[f] !== null) ? this.frequencies[f] : 0;
+      this.frequencies[f] += 1;
     }
     return (this.items = this.items.concat(new_items));
   };
@@ -176,7 +257,7 @@
   model.bind('search.foundInChunk', function(chunk) {
     return table.data(table.data().concat(chunk)).layout();
   });
-  uki('TextField').bind('keyup click', function() {
+  uki('#bidderSearch').bind('keyup click', function() {
     if (this.value().toLowerCase() === lastQuery) {
       return null;
     }
@@ -195,12 +276,27 @@
   socket.on('connect', function() {
     return console.log("Socket established.");
   });
-  renderTimeout = 300;
-  waitingRenderThreshold = 50;
+  renderTimeout = 400;
+  waitingRenderThreshold = 100;
   toBeRendered = [];
   renderTimer = false;
+  bidCountInput = uki('#bidsReceived');
+  bidsReceived = 0;
+  setInterval(function() {
+    return bidCountInput.value(bidsReceived);
+  }, 1000);
   updateTable = function() {
+    var _i, _len, _ref, row;
+    bidsReceived += toBeRendered.length;
     model.addItems(toBeRendered);
+    if (typeof bidsChart !== "undefined" && bidsChart !== null) {
+      _ref = toBeRendered;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        row = _ref[_i];
+        bidsChart.series[0].addPoint([row[4].getTime(), row[3]], false, false);
+      }
+      bidsChart.redraw();
+    }
     table.data(model.items);
     return (toBeRendered = []);
   };
@@ -217,7 +313,7 @@
       console.log("Error parsing a datum", error, data);
     }
     if (data.bId) {
-      toBeRendered.push([data.bId, data.bidder, data.shares, data.price]);
+      toBeRendered.push([data.bId, data.bidder, data.shares, data.price, new Date(data.time * 1)]);
       if (toBeRendered.length < waitingRenderThreshold) {
         return !(renderTimer) ? (renderTimer = setTimeout(updateTable, renderTimeout)) : null;
       } else {
@@ -230,4 +326,21 @@
     return console.log("Socket disconnected!");
   });
   socket.connect();
+  uki("#bidFrequency").bind("layout", function() {
+    var _ref, x, xs, y, ys;
+    xs = [];
+    ys = [];
+    _ref = model.frequencies;
+    for (x in _ref) {
+      if (!__hasProp.call(_ref, x)) continue;
+      y = _ref[x];
+      xs.push(y);
+      ys.push(x);
+    }
+    console.log(xs);
+    return console.log(ys);
+  });
+  setTimeout(function() {
+    return uki("#bidFrequency").trigger("layout");
+  }, 1000);
 }).call(this);

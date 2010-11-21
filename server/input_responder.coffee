@@ -39,7 +39,7 @@ class InputResponder extends EventEmitter
 		if shares > @MAXBIDATONCE
 			return @ERRORSTRING
 	
-		if (price < @MINBIDVALUE) || (price > @MAXBIDVALUE)
+		if (price <= @MINBIDVALUE) || (price >= @MAXBIDVALUE)
 			return @ERRORSTRING
 		
 		this.emit("bidReceived", shares, price, split[3])

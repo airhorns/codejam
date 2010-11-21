@@ -29,25 +29,16 @@
   io = require('socket.io');
   socket = io.listen(app);
   socket.on('connection', function(browser) {
-    return db.fetchBidsInChunks(function(error, data) {
-      var bId, bidder, price, shares, time;
+    return db.fetchBidsInChunks(function(error, bids) {
+      var _i, _len, _ref, bid;
       if (typeof error !== "undefined" && error !== null) {
         console.log(error);
         return false;
       } else {
-        while ((typeof data !== "undefined" && data !== null) && data.length > 0) {
-          bId = parseFloat(data.pop().toString('ascii'));
-          shares = parseFloat(data.pop().toString('ascii'));
-          price = parseFloat(data.pop().toString('ascii'));
-          bidder = data.pop().toString('ascii');
-          time = data.pop().toString('ascii');
-          browser.send(JSON.stringify({
-            bId: bId,
-            shares: shares,
-            price: price,
-            bidder: bidder,
-            time: new Date(time)
-          }));
+        _ref = bids;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          bid = _ref[_i];
+          browser.send(JSON.stringify(bid));
         }
         return this.tryNextChunk();
       }
@@ -62,7 +53,6 @@
     if (channel !== "bids") {
       return null;
     }
-    console.log("broadcasting message " + (message));
     return socket.broadcast(message);
   });
   redisSubscriber.subscribe("bids");

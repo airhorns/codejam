@@ -17,14 +17,24 @@
     buffer = "";
     stream.on('data', function(data) {
       var lineEnd, retStr;
+      if (!(data.length > 0)) {
+        return null;
+      }
       buffer += data;
       lineEnd = buffer.indexOf("\r\n");
       if (lineEnd) {
         data = buffer.substring(0, lineEnd);
         retStr = responder.parseInput(data);
+        stream.write(retStr, 'ascii');
+        buffer = buffer.substring(data.length + 1, buffer.length);
+        return null;
+      } else {
+        if (buffer.length > 52) {
+          stream.write(responder.ERRORSTRING, 'ascii');
+          return null;
+        }
       }
-      stream.write(retStr, 'ascii');
-      return (buffer = buffer.substring(data.length + 1, buffer.length));
+      return null;
     });
     return stream.on('end', function() {
       return stream.end();

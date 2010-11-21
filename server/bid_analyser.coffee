@@ -29,28 +29,17 @@ class BidAnalyser
 	getClearingPrice: (memo, callback) ->
 		sharesSold = 0
 		targetShares = 100000
-		@database.fetchBidsInChunks((error, data) ->
+		@database.fetchBidsInChunks((error, bids) ->
 			# In context of ChunkProcessor
 			throw error if error?
-			while data? && data.length > 0
-				data.pop() # for bId
-				shares = parseFloat(data.pop().toString('ascii'))
-				price = parseFloat(data.pop().toString('ascii'))
-				data.pop() # For bidder field
-				data.pop() # For time field
-				
-				if price? && shares?
-					sharesSold += price * shares
+			for bid in bids
+				sharesSold += bid.price * bid.shares
 
-					if memo
-						key = "$"+String(price)
-						memo.bids[key] ?= 0
-						memo.bids[key] += shares
-
-					else
-						callback {message:"Can't parse out the price/share information from the database!"}, null
-						return false
-				
+				if memo
+					key = "$"+String(bid.price)
+					memo.bids[key] ?= 0
+					memo.bids[key] += bid.shares
+	
 			# Calls this function or the given one if there are no more chunks
 			this.tryNextChunk () ->
 				# No more chunks!

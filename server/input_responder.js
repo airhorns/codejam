@@ -54,7 +54,7 @@
     if (shares > this.MAXBIDATONCE) {
       return this.ERRORSTRING;
     }
-    if ((price < this.MINBIDVALUE) || (price > this.MAXBIDVALUE)) {
+    if ((price <= this.MINBIDVALUE) || (price >= this.MAXBIDVALUE)) {
       return this.ERRORSTRING;
     }
     this.emit("bidReceived", shares, price, split[3]);

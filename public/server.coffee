@@ -29,18 +29,13 @@ io = require('socket.io')
 socket = io.listen(app)
 
 socket.on 'connection', (browser) ->
-	db.fetchBidsInChunks((error, data) ->
+	db.fetchBidsInChunks((error, bids) ->
 		if error?
 			console.log(error)
 			return false
 		else
-			while data? && data.length > 0
-				bId = parseFloat(data.pop().toString('ascii'))
-				shares = parseFloat(data.pop().toString('ascii'))
-				price = parseFloat(data.pop().toString('ascii'))
-				bidder = data.pop().toString('ascii')
-				time = data.pop().toString('ascii')
-				browser.send(JSON.stringify({bId: bId, shares:shares, price:price, bidder:bidder, time: new Date(time)}))
+			for bid in bids
+				browser.send(JSON.stringify(bid))
 			this.tryNextChunk()
 	)
 	
@@ -53,7 +48,7 @@ redisSubscriber = Redis.createClient()
 
 redisSubscriber.on "message", (channel, message) ->
 	return unless channel == "bids"
-	console.log("broadcasting message #{message}")
+	# console.log("broadcasting message #{message}")
 	socket.broadcast(message)
 
 redisSubscriber.subscribe("bids")

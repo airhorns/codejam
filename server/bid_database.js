@@ -24,21 +24,55 @@
   BidChunkProcessor.prototype.chunkSize = 100;
   BidChunkProcessor.prototype.currentChunk = 0;
   BidChunkProcessor.prototype.count = 0;
+  BidChunkProcessor.prototype.processing = true;
   BidChunkProcessor.prototype.getNextChunk = function() {
+    if (!(this.processing)) {
+      return false;
+    }
     return this.client.sort(["bIds", "BY", "bid_*->price", "DESC", "LIMIT", this.currentChunk * this.chunkSize, this.chunkSize, "GET", "#", "GET", "bid_*->shares", "GET", "bid_*->price", "GET", "bid_*->bidder", "GET", "bid_*->time"], __bind(function(err, reply) {
-      this.processCallback(err, reply);
-      return this.currentChunk += 1;
+      var bId, bidder, formatted, price, shares, time;
+      if (!(typeof reply !== "undefined" && reply !== null)) {
+        this.processing = false;
+        return false;
+      }
+      formatted = [];
+      while (reply.length > 0) {
+        if (reply.length < 5) {
+          throw {
+            message: "Weird number of replies returned"
+          };
+        }
+        bId = parseInt(reply.shift().toString('ascii'));
+        shares = parseInt(reply.shift().toString('ascii'));
+        price = parseInt(reply.shift().toString('ascii'));
+        bidder = reply.shift().toString('ascii');
+        time = reply.shift().toString('ascii');
+        formatted.push({
+          bId: bId,
+          shares: shares,
+          price: price,
+          bidder: bidder,
+          time: time
+        });
+      }
+      if (formatted.length > 0) {
+        reply = formatted;
+      } else {
+        reply = [];
+      }
+      return this.processCallback(err, reply);
     }, this));
   };
   BidChunkProcessor.prototype.tryNextChunk = function(errorCallback) {
     if (!(this.currentChunk >= this.totalChunks)) {
-      this.getNextChunk();
+      this.currentChunk += 1;
+      return this.getNextChunk();
     } else {
+      this.processing = false;
       if (typeof errorCallback !== "undefined" && errorCallback !== null) {
-        errorCallback();
+        return errorCallback();
       }
     }
-    return false;
   };
   BidDatabase = function(config, responder) {
     var _this;

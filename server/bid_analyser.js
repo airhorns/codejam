@@ -56,29 +56,19 @@
     var sharesSold, targetShares;
     sharesSold = 0;
     targetShares = 100000;
-    return this.database.fetchBidsInChunks(function(error, data) {
-      var key, price, shares;
+    return this.database.fetchBidsInChunks(function(error, bids) {
+      var _i, _len, _ref, bid, key;
       if (typeof error !== "undefined" && error !== null) {
         throw error;
       }
-      while ((typeof data !== "undefined" && data !== null) && data.length > 0) {
-        data.pop();
-        shares = parseFloat(data.pop().toString('ascii'));
-        price = parseFloat(data.pop().toString('ascii'));
-        data.pop();
-        data.pop();
-        if ((typeof price !== "undefined" && price !== null) && (typeof shares !== "undefined" && shares !== null)) {
-          sharesSold += price * shares;
-          if (memo) {
-            key = "$" + String(price);
-            memo.bids[key] = (typeof memo.bids[key] !== "undefined" && memo.bids[key] !== null) ? memo.bids[key] : 0;
-            memo.bids[key] += shares;
-          } else {
-            callback({
-              message: "Can't parse out the price/share information from the database!"
-            }, null);
-            return false;
-          }
+      _ref = bids;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        bid = _ref[_i];
+        sharesSold += bid.price * bid.shares;
+        if (memo) {
+          key = "$" + String(bid.price);
+          memo.bids[key] = (typeof memo.bids[key] !== "undefined" && memo.bids[key] !== null) ? memo.bids[key] : 0;
+          memo.bids[key] += bid.shares;
         }
       }
       return this.tryNextChunk(function() {
