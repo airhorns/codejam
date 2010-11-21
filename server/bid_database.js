@@ -25,7 +25,7 @@
   BidChunkProcessor.prototype.currentChunk = 0;
   BidChunkProcessor.prototype.count = 0;
   BidChunkProcessor.prototype.getNextChunk = function() {
-    return this.client.sort(["bIds", "BY", "bid_*->price", "DESC", "LIMIT", this.currentChunk * this.chunkSize, this.chunkSize, "GET", "#", "GET", "bid_*->price", "GET", "bid_*->shares", "GET", "bid_*->bidder", "GET", "bid_*->time"], __bind(function(err, reply) {
+    return this.client.sort(["bIds", "BY", "bid_*->price", "DESC", "LIMIT", this.currentChunk * this.chunkSize, this.chunkSize, "GET", "#", "GET", "bid_*->shares", "GET", "bid_*->price", "GET", "bid_*->bidder", "GET", "bid_*->time"], __bind(function(err, reply) {
       this.processCallback(err, reply);
       return this.currentChunk += 1;
     }, this));
@@ -58,11 +58,14 @@
   BidDatabase.prototype.addBid = function(shares, price, bidder) {
     console.log("Adding bid", shares, price, bidder);
     return this.getBidId(__bind(function(error, bId) {
-      return this.client.multi().hmset("bid_" + (bId), "shares", shares, "price", price, "bidder", bidder, "time", new Date().getTime()).sadd("bIds", bId).publish("bids", JSON.stringify({
+      var t;
+      t = new Date().getTime();
+      return this.client.multi().hmset("bid_" + (bId), "shares", shares, "price", price, "bidder", bidder, "time", t).sadd("bIds", bId).publish("bids", JSON.stringify({
         bId: bId,
         shares: shares,
         price: price,
-        bidder: bidder
+        bidder: bidder,
+        time: t
       })).exec(function() {});
     }, this));
   };

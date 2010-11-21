@@ -142,19 +142,21 @@
   table = uki('Table');
   table.data(model.items);
   resetHeaders = function(except) {
-    var _i, _len, _ref, _result, col, header;
-    header = table.find('Header');
-    _result = []; _ref = header.columns();
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      col = _ref[_i];
-      _result.push((function() {
-        if (!(typeof except !== "undefined" && except !== null) || col !== except) {
-          col.sort('');
-          return header.redrawColumn(col._position);
-        }
-      })());
-    }
-    return _result;
+    return table.find('Header').each(function() {
+      var _i, _len, _ref, _result, col, header;
+      header = this;
+      _result = []; _ref = header.columns();
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        col = _ref[_i];
+        _result.push((function() {
+          if (!(typeof except !== "undefined" && except !== null) || col !== except) {
+            col.sort('');
+            return header.redrawColumn(col._position);
+          }
+        })());
+      }
+      return _result;
+    });
   };
   table.find('Header').bind('columnClick', function(e) {
     var header;
@@ -209,7 +211,6 @@
     }
   };
   socket.on('message', function(data) {
-    console.log(data);
     try {
       data = JSON.parse(data);
     } catch (error) {

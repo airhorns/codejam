@@ -101,12 +101,14 @@ table.data(model.items)
 
 # Set up the sorting headers
 resetHeaders = (except) ->
-	header = table.find('Header')
-	for col in header.columns()
-		if !except? || col != except
-			col.sort('')
-			header.redrawColumn(col._position)
-
+	table.find('Header').each(() ->
+		header = this
+		for col in header.columns()
+			if !except? || col != except
+				col.sort('')
+				header.redrawColumn(col._position)
+		)
+# Binding to the column clicking of the header to allow sorting
 table.find('Header').bind 'columnClick', (e) ->
 	header = this
 	uki('#loading').visible(true)
@@ -158,7 +160,6 @@ stopRenderTimer = () ->
 		renderTimer = false
 
 socket.on 'message', (data) ->
-	console.log(data)
 	try
 		data = JSON.parse(data)
 	catch error

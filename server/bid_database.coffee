@@ -21,8 +21,8 @@ class BidChunkProcessor
 		@client.sort(["bIds", "BY", "bid_*->price", "DESC",
 									"LIMIT", @currentChunk * @chunkSize, @chunkSize,
 									"GET", "#",
-									"GET", "bid_*->price",
 									"GET", "bid_*->shares",
+									"GET", "bid_*->price",
 									"GET", "bid_*->bidder",
 									"GET", "bid_*->time"],
 									(err, reply) =>
@@ -60,13 +60,12 @@ class BidDatabase
 			# 
 			# # Notify subscribers of bid addition
 			# @client.publish("bids", JSON.stringify({bId: bId, shares: shares, price: price, bidder: bidder}))
-
+			t = new Date().getTime()
 			@client.multi()
-				.hmset("bid_#{bId}", "shares", shares, "price", price, "bidder", bidder, "time", new Date().getTime())
+				.hmset("bid_#{bId}", "shares", shares, "price", price, "bidder", bidder, "time", t)
 				.sadd("bIds", bId)
-				.publish("bids", JSON.stringify({bId: bId, shares: shares, price: price, bidder: bidder}))
+				.publish("bids", JSON.stringify({bId: bId, shares: shares, price: price, bidder: bidder, time: t}))
 				.exec(->)
-
 		)
 
 	getBidId: (callback) ->

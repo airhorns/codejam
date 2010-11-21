@@ -40,7 +40,7 @@ socket.on 'connection', (browser) ->
 				price = parseFloat(data.pop().toString('ascii'))
 				bidder = data.pop().toString('ascii')
 				time = data.pop().toString('ascii')
-				browser.send(JSON.stringify({shares:shares, price:price, bidder:bidder, time: new Date(time)}))
+				browser.send(JSON.stringify({bId: bId, shares:shares, price:price, bidder:bidder, time: new Date(time)}))
 			this.tryNextChunk()
 	)
 	

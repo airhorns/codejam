@@ -42,6 +42,7 @@
           bidder = data.pop().toString('ascii');
           time = data.pop().toString('ascii');
           browser.send(JSON.stringify({
+            bId: bId,
             shares: shares,
             price: price,
             bidder: bidder,
