@@ -30,7 +30,7 @@ socket = io.listen(app)
 
 socket.on 'connection', (browser) ->
 	db.fetchBidsInChunks((error, bids) ->
-		if error?
+		if error? || !bids?
 			console.log(error)
 			return false
 		else

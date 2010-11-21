@@ -287,11 +287,11 @@
     var _i, _len, _ref, row;
     bidsReceived += toBeRendered.length;
     model.addItems(toBeRendered);
-    if (typeof bidsChart !== "undefined" && bidsChart !== null) {
+    if (typeof bidsDetailChart !== "undefined" && bidsDetailChart !== null) {
       _ref = toBeRendered;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         row = _ref[_i];
-        bidsChart.series[0].addPoint([row[4].getTime(), row[3]], false, false);
+        bidsDetailChart.series[0].addPoint([row[4].getTime(), row[3]], false, false);
       }
     }
     table.data(model.items);
@@ -329,6 +329,6 @@
   });
   socket.connect();
   setInterval(function() {
-    return bidsChart.redraw();
+    return bidsDetailChart.redraw();
   }, 2000);
 }).call(this);

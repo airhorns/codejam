@@ -218,9 +218,9 @@ setInterval(() ->
 updateTable = () ->
 	bidsReceived += toBeRendered.length
 	model.addItems(toBeRendered)
-	if bidsChart?
+	if bidsDetailChart?
 		for row in toBeRendered
-			bidsChart.series[0].addPoint([row[4].getTime(), row[3]], false, false)
+			bidsDetailChart.series[0].addPoint([row[4].getTime(), row[3]], false, false)
 
 	table.data(model.items)
 	toBeRendered = []
@@ -258,5 +258,5 @@ socket.on 'disconnect', () ->
 socket.connect()
 
 setInterval(() ->
-	bidsChart.redraw()
+	bidsDetailChart.redraw()
 , 2000)

@@ -31,7 +31,7 @@
   socket.on('connection', function(browser) {
     return db.fetchBidsInChunks(function(error, bids) {
       var _i, _len, _ref, bid;
-      if (typeof error !== "undefined" && error !== null) {
+      if ((typeof error !== "undefined" && error !== null) || !(typeof bids !== "undefined" && bids !== null)) {
         console.log(error);
         return false;
       } else {
