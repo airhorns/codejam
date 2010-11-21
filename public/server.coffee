@@ -59,19 +59,17 @@ redisSubscriber.subscribe("bids")
 summaryRunning = false
 
 setInterval(() ->
-	console.log "Trying to get summary", summaryRunning
 	return if summaryRunning
-
 	# Broadcast summary every 2 seconds
 	summaryRunning = true
 	analyser.getClearingPrice null, (error, price) ->
-		console.log(error, price)
 		if error?
 			console.log(error)
 		else
 			if price?
-				console.log("Clearing price is "+price)
 				socket.broadcast JSON.stringify {summary:{clearingPrice: price}}
+			else
+				console.log "Unable to get clearing price!", error, price
 			summaryRunning = false
 , 2000)
 

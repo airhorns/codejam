@@ -6,12 +6,13 @@ class BidAnalyser
 		this.watchResponder(responder) if responder?
 
 	watchResponder: (responder) ->
+		@responder = responder
 		responder.on "summaryRequest", () => this.generateSummary(true)
 
 	generateSummary: (output, callback) ->
 		obj =
 			bids: {}
-		obj.status = if @database.acceptingBids then "OPEN" else "CLOSED"
+		obj.status = if @responder.acceptingBids then "OPEN" else "CLOSED"
 		
 		this.getClearingPrice(obj,(error, price) =>
 			throw error if error?
@@ -28,11 +29,15 @@ class BidAnalyser
 
 	getClearingPrice: (memo, callback) ->
 		sharesSold = 0
-		targetShares = 100000
+		targetShares = @shares
 		clearingPrice = null
 		@database.fetchBidsInChunks((error, bids) ->
 			# In context of ChunkProcessor
 			throw error if error?
+			if !bids? || !bids.length?
+				console.log("Unable to get clearing price, needed #{targetShares} and only had #{@count}")
+				callback(null, null)
+				return
 			for bid in bids
 				sharesSold += bid.price * bid.shares
 
@@ -40,8 +45,8 @@ class BidAnalyser
 					key = "$"+String(bid.price)
 					memo.bids[key] ?= 0
 					memo.bids[key] += bid.shares
-					if sharesSold > targetShares
-						clearingPrice = bid.price
+				if sharesSold > targetShares
+					clearingPrice = bid.price
 	
 			# Calls this function or the given one if there are no more chunks
 			this.tryNextChunk () ->
@@ -53,7 +58,9 @@ class BidAnalyser
 					callback(null, clearingPrice)
 					return true
 				else
+					console.log("Unable to get clearing price, needed #{targetShares} and only had #{sharesSold}")
 					callback(null, null)
+					return true
 			)
 	
 exports.BidAnalyser = BidAnalyser

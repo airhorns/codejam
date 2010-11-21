@@ -17,6 +17,7 @@
     return this;
   };
   BidAnalyser.prototype.watchResponder = function(responder) {
+    this.responder = responder;
     return responder.on("summaryRequest", __bind(function() {
       return this.generateSummary(true);
     }, this));
@@ -26,7 +27,7 @@
     obj = {
       bids: {}
     };
-    obj.status = this.database.acceptingBids ? "OPEN" : "CLOSED";
+    obj.status = this.responder.acceptingBids ? "OPEN" : "CLOSED";
     return this.getClearingPrice(obj, __bind(function(error, price) {
       if (typeof error !== "undefined" && error !== null) {
         throw error;
@@ -55,12 +56,17 @@
   BidAnalyser.prototype.getClearingPrice = function(memo, callback) {
     var clearingPrice, sharesSold, targetShares;
     sharesSold = 0;
-    targetShares = 100000;
+    targetShares = this.shares;
     clearingPrice = null;
     return this.database.fetchBidsInChunks(function(error, bids) {
       var _i, _len, _ref, bid, key;
       if (typeof error !== "undefined" && error !== null) {
         throw error;
+      }
+      if (!(typeof bids !== "undefined" && bids !== null) || !(typeof (_ref = bids.length) !== "undefined" && _ref !== null)) {
+        console.log("Unable to get clearing price, needed " + (targetShares) + " and only had " + (this.count));
+        callback(null, null);
+        return null;
       }
       _ref = bids;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -70,9 +76,9 @@
           key = "$" + String(bid.price);
           memo.bids[key] = (typeof memo.bids[key] !== "undefined" && memo.bids[key] !== null) ? memo.bids[key] : 0;
           memo.bids[key] += bid.shares;
-          if (sharesSold > targetShares) {
-            clearingPrice = bid.price;
-          }
+        }
+        if (sharesSold > targetShares) {
+          clearingPrice = bid.price;
         }
       }
       return this.tryNextChunk(function() {
@@ -84,7 +90,9 @@
           callback(null, clearingPrice);
           return true;
         } else {
-          return callback(null, null);
+          console.log("Unable to get clearing price, needed " + (targetShares) + " and only had " + (sharesSold));
+          callback(null, null);
+          return true;
         }
       });
     });

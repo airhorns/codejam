@@ -1,5 +1,5 @@
 (function() {
-  var BidModel, bidCountInput, bidsDetailsChart, bidsMasterChart, bidsReceived, formatHlted, formatPrice, hlt, lastQuery, model, renderTimeout, renderTimer, resetHeaders, socket, stopRenderTimer, table, toBeRendered, updateTable, waitingRenderThreshold;
+  var BidModel, bidCountInput, bidsDetailsChart, bidsMasterChart, bidsReceived, clearingPriceInput, currentClearingPrice, drawClearingThreshold, formatHlted, formatPrice, hlt, lastQuery, model, renderTimeout, renderTimer, resetHeaders, socket, stopRenderTimer, table, toBeRendered, updateTable, waitingRenderThreshold;
   var __extends = function(child, parent) {
     var ctor = function(){};
     ctor.prototype = parent.prototype;
@@ -47,11 +47,11 @@
           }, {
             view: 'Label',
             rect: '800 20 100 20',
-            html: '<span style="font-size: 15px;">Clearing Price</span>',
+            html: '<span style="font-size: 15px;">Clearing Price</span> $',
             anchors: 'top left right width'
           }, {
             view: 'TextField',
-            rect: '900 15 40 30',
+            rect: '910 15 40 30',
             anchors: 'top left',
             value: "0",
             id: 'clearingPrice'
@@ -206,6 +206,7 @@
             color: (Highcharts.theme == null ? undefined : Highcharts.theme.maskColor) || 'rgba(0, 0, 0, 0.2)'
           });
           bidsDetailsChart.series[0].setData(detailData);
+          bidsDetailsChart.series[1].setData([[selectionExtremes.min, currentClearingPrice], [selectionExtremes.max, currentClearingPrice]]);
           return false;
         }
       }
@@ -214,6 +215,7 @@
       text: null
     },
     xAxis: {
+      gridLineWidth: 1,
       type: 'datetime',
       showLastTickLabel: true,
       plotBands: [
@@ -300,7 +302,8 @@
       },
       xAxis: {
         type: 'datetime',
-        tickPixelInterval: 150
+        tickPixelInterval: 150,
+        gridLineWidth: 1
       },
       yAxis: {
         title: {
@@ -313,6 +316,11 @@
             color: '#808080'
           }
         ]
+      },
+      plotOptions: {
+        line: {
+          lineWidth: 10
+        }
       },
       tooltip: {
         formatter: function() {
@@ -330,10 +338,32 @@
           name: 'Bids',
           type: 'scatter',
           data: []
+        }, {
+          type: 'line',
+          name: 'Clearing Price',
+          data: [],
+          marker: {
+            enabled: false
+          },
+          enableMouseTracking: false
         }
       ]
     }));
   });
+  currentClearingPrice = false;
+  drawClearingThreshold = function(price) {
+    var _ref, data;
+    currentClearingPrice = price;
+    if (typeof bidsDetailsChart !== "undefined" && bidsDetailsChart !== null) {
+      data = bidsDetailsChart.series[1].data;
+      if ((typeof data !== "undefined" && data !== null) && (typeof (_ref = data[0]) !== "undefined" && _ref !== null) && (typeof (_ref = data[1]) !== "undefined" && _ref !== null)) {
+        data[0][1] = price;
+        data[1][1] = price;
+        bidsDetailsChart.series[1].setData(data);
+        return bidsDetailsChart.redraw();
+      }
+    }
+  };
   BidModel = function() {
     return Searchable.apply(this, arguments);
   };
@@ -415,6 +445,7 @@
   renderTimer = false;
   bidsReceived = 0;
   bidCountInput = uki('#bidsReceived');
+  clearingPriceInput = uki('#clearingPrice');
   updateTable = function() {
     var _i, _len, _ref, row;
     bidsReceived += toBeRendered.length;
@@ -453,24 +484,26 @@
     console.log("Socket established.");
     return uki('#loading').visible(false);
   });
-  socket.on('message', function(data) {
+  socket.on('message', function(buffer) {
+    var data;
     try {
-      data = JSON.parse(data);
+      data = JSON.parse(buffer);
     } catch (error) {
       console.log("Error parsing a datum", error, data);
+      return null;
     }
     if (data.bId) {
       toBeRendered.push([data.bId, data.bidder, data.shares, data.price, new Date(parseInt(data.time))]);
       if (toBeRendered.length < waitingRenderThreshold) {
-        if (!(renderTimer)) {
-          renderTimer = setTimeout(updateTable, renderTimeout);
-        }
+        return !(renderTimer) ? (renderTimer = setTimeout(updateTable, renderTimeout)) : null;
       } else {
         stopRenderTimer();
-        updateTable();
+        return updateTable();
       }
+    } else if (data.summary == null ? undefined : data.summary.clearingPrice) {
+      clearingPriceInput.value(data.summary.clearingPrice);
+      return drawClearingThreshold(data.summary.clearingPrice);
     }
-    return data.summary ? console.log(data) : null;
   });
   socket.on('disconnect', function() {
     return console.log("Socket disconnected!");

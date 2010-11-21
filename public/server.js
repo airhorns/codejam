@@ -60,27 +60,26 @@
   redisSubscriber.subscribe("bids");
   summaryRunning = false;
   setInterval(function() {
-    console.log("Trying to get summary", summaryRunning);
     if (summaryRunning) {
       return null;
     }
     summaryRunning = true;
     return analyser.getClearingPrice(null, function(error, price) {
-      console.log(error, price);
       if (typeof error !== "undefined" && error !== null) {
         return console.log(error);
       } else {
         if (typeof price !== "undefined" && price !== null) {
-          console.log("Clearing price is " + price);
           socket.broadcast(JSON.stringify({
             summary: {
               clearingPrice: price
             }
           }));
+        } else {
+          console.log("Unable to get clearing price!", error, price);
         }
         return (summaryRunning = false);
       }
     });
-  }, 2000);
+  }, 3000);
   app.listen(config.webServerPort);
 }).call(this);

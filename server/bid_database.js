@@ -12,12 +12,17 @@
     this.processCallback = processCallback;
     this.client = client;
     this.client.scard("bIds", __bind(function(error, count) {
+      this.count = count;
       if (typeof error !== "undefined" && error !== null) {
         throw error;
       }
       console.log("" + (count) + " bids total.");
-      this.totalChunks = Math.ceil(count / this.chunkSize) - 1;
-      return this.getNextChunk();
+      if (count > 0) {
+        this.totalChunks = Math.ceil(count / this.chunkSize) - 1;
+        return this.getNextChunk();
+      } else {
+        return this.processCallback(null, null);
+      }
     }, this));
     return this;
   };
@@ -29,7 +34,6 @@
     if (!(this.processing)) {
       return false;
     }
-    console.log(this.currentChunk, this.chunkSize, this.totalChunks);
     return this.client.sort(["bIds", "BY", "bid_*->price", "DESC", "LIMIT", this.currentChunk * this.chunkSize, this.chunkSize, "GET", "#", "GET", "bid_*->shares", "GET", "bid_*->price", "GET", "bid_*->bidder", "GET", "bid_*->time"], __bind(function(err, reply) {
       var bId, bidder, formatted, price, shares, time;
       if (!(typeof reply !== "undefined" && reply !== null)) {
@@ -68,15 +72,13 @@
     }, this));
   };
   BidChunkProcessor.prototype.tryNextChunk = function(errorCallback) {
-    console.log("trying next chunk");
     if (!(this.currentChunk >= this.totalChunks)) {
-      console.log("more chunks!");
       this.currentChunk += 1;
       return this.getNextChunk();
     } else {
       this.processing = false;
       if (typeof errorCallback !== "undefined" && errorCallback !== null) {
-        return errorCallback();
+        return errorCallback.call(this);
       }
     }
   };
@@ -95,8 +97,8 @@
     responder.on("bidReceived", this.addBid);
     return responder.on("resetDatabase", this.reInitialize);
   };
-  BidDatabase.prototype.addBid = function(shares, price, bidder) {
-    console.log("Adding bid", shares, price, bidder);
+  BidDatabase.prototype.addBid = function(shares, price, bidder, open) {
+    console.log("Adding bid", shares, price);
     return this.getBidId(__bind(function(error, bId) {
       var t;
       t = new Date().getTime();

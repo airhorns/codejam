@@ -15,7 +15,6 @@ class InputResponder extends EventEmitter
 	acceptingBids: true
 	parseInput: (inputString) ->
 		# return error: not acepting bids anymore
-		return @BIDCLOSEDSTRING unless @acceptingBids
 
 		# Trim input string to get rid of any shenanigans
 		inputString = inputString.replace(/[\s\u0000\u0012]*$/mig, "").replace(/^[\s\u0000\u0012]*/mig, "")
@@ -32,6 +31,8 @@ class InputResponder extends EventEmitter
 			else return @ERRORSTRING
 
 	parseSubmission: (split, full) ->
+		return @BIDCLOSEDSTRING unless @acceptingBids
+		
 		shares = parseFloat(split[1])
 		price = parseFloat(split[2])
 

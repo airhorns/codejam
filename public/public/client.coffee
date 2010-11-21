@@ -41,11 +41,11 @@ uki(
 		},{
 			view: 'Label'
 			rect: '800 20 100 20'
-			html: '<span style="font-size: 15px;">Clearing Price</span>'
+			html: '<span style="font-size: 15px;">Clearing Price</span> $'
 			anchors: 'top left right width'
 		},{
 			view: 'TextField'
-			rect: '900 15 40 30'
+			rect: '910 15 40 30'
 			anchors: 'top left'
 			value: "0"
 			id: 'clearingPrice'
@@ -164,11 +164,14 @@ bidsMasterChart = new Highcharts.Chart({
 				})
 									
 				bidsDetailsChart.series[0].setData(detailData)
-									
+				bidsDetailsChart.series[1].setData([[selectionExtremes.min, currentClearingPrice],[selectionExtremes.max,currentClearingPrice]])
+				
+
 				return false
 	title:
 		text: null
 	xAxis:
+		gridLineWidth: 1
 		type: 'datetime'
 		showLastTickLabel: true
 		plotBands: [{
@@ -231,6 +234,7 @@ bidsMasterChart = new Highcharts.Chart({
 		xAxis:
 			type: 'datetime'
 			tickPixelInterval: 150
+			gridLineWidth: 1
 		yAxis:
 			title:
 				text: 'Value'
@@ -239,6 +243,9 @@ bidsMasterChart = new Highcharts.Chart({
 				width: 1
 				color: '#808080'
 			}]
+		plotOptions:
+			line:
+				lineWidth: 10
 		tooltip:
 			formatter: () ->
 				return '<b>'+ this.point.bidder +'</b>:<br/>'+
@@ -252,9 +259,27 @@ bidsMasterChart = new Highcharts.Chart({
 			name: 'Bids'
 			type: 'scatter'
 			data: []
+		},{
+			type: 'line',
+			name: 'Clearing Price',
+			data: [],
+			marker:
+				enabled: false
+			enableMouseTracking: false
 		}]
 	})
 )
+
+currentClearingPrice = false
+drawClearingThreshold = (price) ->
+	currentClearingPrice = price
+	if bidsDetailsChart?
+		data = bidsDetailsChart.series[1].data
+		if data? && data[0]? && data[1]?
+			data[0][1] = price
+			data[1][1] = price
+			bidsDetailsChart.series[1].setData data
+			bidsDetailsChart.redraw()
 
 
 # searchable model
@@ -328,6 +353,7 @@ renderTimer = false
 
 bidsReceived = 0
 bidCountInput = uki('#bidsReceived')
+clearingPriceInput = uki('#clearingPrice')
 
 # Function which renders out the render buffer
 updateTable = () ->
@@ -360,12 +386,12 @@ socket.on 'connect', () ->
 	uki('#loading').visible(false)
 	
 
-socket.on 'message', (data) ->
+socket.on 'message', (buffer) ->
 	try
-		data = JSON.parse(data)
+		data = JSON.parse(buffer)
 	catch error
 		console.log("Error parsing a datum", error, data)
-
+		return
 	# Figure out what the message was
 	if data.bId
 		toBeRendered.push([data.bId, data.bidder, data.shares, data.price, new Date(parseInt(data.time))])
@@ -376,8 +402,10 @@ socket.on 'message', (data) ->
 			# Enough to render!
 			stopRenderTimer()
 			updateTable()
-	if data.summary
-		console.log(data)
+	else if data.summary?.clearingPrice
+		clearingPriceInput.value(data.summary.clearingPrice)
+		drawClearingThreshold(data.summary.clearingPrice)
+
 socket.on 'disconnect', () ->
 	console.log("Socket disconnected!")
 
