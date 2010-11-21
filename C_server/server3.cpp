@@ -19,7 +19,7 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 
-//#include <boost/regex.hpp>
+#include <boost/regex.hpp>
 
 #include <list>
 
@@ -49,7 +49,7 @@ const string CORRECTCLOSE("C|TERMINATE\r\n");
 const string CORRECTRESET("R\r\n");
 const string CORRECTSUMMARY("S|SUMMARY\r\n");
 
-//const boost::regex CORRECTREGEX("^B\\|[0-9]{1,7}\\|[0-9]{1,7}\\|\\s*.+?\\s*$");
+const boost::regex CORRECTREGEX("^B\\|[0-9]{1,7}\\|[0-9]{1,7}\\|\\s*.+?\\s*$");
 char *str[12];
 redisContext *redC;
 redisReply *rreply;
@@ -151,15 +151,12 @@ static void resetAll(){
 	rreply = (redisReply*)redisCommand(redC, "INCR global:nextBid");	
 	bidID = rreply->integer;
 	printf("flushed; bid: %i\n",bidID);
-	//freeReplyObject((void*)rreply);
+	freeReplyObject((void*)rreply);
 }
 
 static bool parseRequest(Session *sptr)
 {
 //	printf("%i\t%s\n",sptr->rbytes, sptr->readbuf);
-	
-//	if( sptr->readbuf[0] == 'C' ) sptr->readbuf[13] = '\0'; //workaround the trailing ascii 1
-//	if( sptr->readbuf[0] == 'S' ) sptr->readbuf[11] = '\0';
 	
 	char* output;
 	string input(sptr->readbuf, sptr->rbytes);
@@ -191,7 +188,7 @@ static bool parseRequest(Session *sptr)
 			val1 = atoi(input.substr(firstSeparator+1,length1).c_str()); //value of the first field - number of bids
 			val2 = atoi(input.substr(secondSeparator+1,length2).c_str());//value of the second field - cost of bids
 			bidNameLen = thirdSeparator - (sptr->rbytes - 1);
-			if(// 	(!regex_match( input, CORRECTREGEX)) ||
+			if( 	(!regex_match( input, CORRECTREGEX)) ||
 				(thirdSeparator == (-1) ) || //error checking...
 				(firstSeparator != 1) || 
 				(secondSeparator-firstSeparator <= 1) ||
