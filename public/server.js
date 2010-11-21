@@ -1,5 +1,5 @@
 (function() {
-  var BidAnalyser, BidDatabase, analyser, app, db, express, io;
+  var BidAnalyser, BidDatabase, analyser, app, db, express, io, socket;
   BidDatabase = require('../server/bid_database.js').BidDatabase;
   BidAnalyser = require('../server/bid_analyser.js').BidAnalyser;
   db = new BidDatabase();
@@ -12,7 +12,7 @@
     app.use(app.router);
     return app.use(express.staticProvider(__dirname + '/public'));
   });
-  app.set('view engine', 'hamljs');
+  app.set('view engine', 'jade');
   app.configure('development', function() {
     return app.use(express.errorHandler({
       dumpExceptions: true,
@@ -23,21 +23,22 @@
     return app.use(express.errorHandler());
   });
   app.get('/', function(req, res) {
-    return res.render('index.haml');
+    return res.render('index');
   });
+  app.listen(3000);
   io = require('socket.io');
-  io.listen(app);
-  io.on('connection', function() {});
-  io.on('message', function(data) {
+  socket = io.listen(app);
+  socket.on('connection', function() {});
+  socket.on('message', function(data) {
     return alert(data);
   });
-  io.on('disconnect', function() {});
+  socket.on('disconnect', function() {});
   db.client.on("message", function(channel, message) {
     if (channel !== "bids") {
       return null;
     }
-    return io.broadcast(message);
+    console.log("broadcasting message " + (message));
+    return socket.broadcast(message);
   });
   db.client.subscribe("bids");
-  app.listen(3000);
 }).call(this);

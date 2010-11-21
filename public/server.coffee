@@ -11,7 +11,7 @@ app.configure ->
   app.use(express.bodyDecoder())
   app.use(app.router)
   app.use(express.staticProvider(__dirname + '/public'))
-	app.set('view engine', 'hamljs')
+	app.set('view engine', 'jade')
 
 
 app.configure 'development', () ->
@@ -22,23 +22,24 @@ app.configure 'production', () ->
   app.use(express.errorHandler())
 
 app.get '/', (req, res) ->
-    res.render('index.haml')
+  res.render('index')
 
+app.listen(3000)
 
 io = require('socket.io')
-io.listen(app)
+socket = io.listen(app)
 
-io.on 'connection', () ->
-
-io.on 'message', (data) ->
+socket.on 'connection', () ->
+	
+socket.on 'message', (data) ->
   alert(data)
 
-io.on 'disconnect', ->
+socket.on 'disconnect', ->
 
 db.client.on "message", (channel, message) ->
 	return unless channel == "bids"
-	io.broadcast(message)
+	console.log("broadcasting message #{message}")
+	socket.broadcast(message)
 
 db.client.subscribe("bids")
 
-app.listen(3000)
