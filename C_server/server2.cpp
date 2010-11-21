@@ -33,7 +33,10 @@
 #define MAXBIDATONCE 10000
 #define TOTALSHARES 1000
 #define ACCEPTSTR "A\r\n"
-#define ERRORSTR "E\r\n"
+
+//#define ERRORSTR "E\r\n"
+#define ERRORSTR "HTTP/1.0 200 OK\nContent-Type: text/html; charset=ISO-8859-1\nConnection: close"
+
 #define CLOSESTR "C\r\n"
 #define RESETSTR "R\r\n"
 //portnum is devined via command line; so should be these values
@@ -79,9 +82,6 @@ static void set_non_blocking(int sockfd)
   int flags = fcntl( sockfd, F_GETFL, 0);
   fcntl( sockfd, F_SETFL, flags | O_NONBLOCK);
 }
-
-const char *GoodReply = "Hurra, it is working!";
-const char *BadReply  = "Oops, something is wrong";
 
 static void setReply( Session *sessPtr, const char *reply)
 {
@@ -209,14 +209,15 @@ void run_server(int listeningSocket)
   
   std::list<Session *> sessions;
   std::list<Session *>::iterator it;
-  
+
   while(true) {
     FD_ZERO(&rmask);
     FD_ZERO(&wmask);
-    
+//	printf("%i sessions currently present\n", sessions.size());
     FD_SET( listeningSocket, &rmask);
     for( it=sessions.begin(); it != sessions.end(); ++it) {
       Session *sess = *it;
+	  
       
       // Read until there is a free space
       if( sess-> rbytes < sizeof(sess->readbuf))
@@ -289,6 +290,7 @@ void run_server(int listeningSocket)
 		  int wrote = write( sessPtr->sockfd, 
 					 sessPtr->writebuf + sessPtr->wbytes,
 					 sessPtr->wsize - sessPtr->wbytes);
+	//		printf( "%i bytes written\n",wrote);
 
 		  if( wrote <= 0) {
 			printf("Error writing to session with sock %d (%d - %s)\n",
