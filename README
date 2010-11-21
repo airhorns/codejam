@@ -16,8 +16,23 @@ To run the reference Node.js backend (which is kinda slow in the face of THEDOMI
 run `node server/ipo_server.js`
 
 ==== Installation ====
+Install node.
+$ wget http://nodejs.org/dist/node-v0.2.5.tar.gz
+$ ./configure
+$ make
+$ make install
+
+Install npm
+$ curl http://npmjs.org/install.sh | sh
+
+Compile the C server
+
+$ g++ -O3 -Wall -o server server3.cpp ...
+
+
 You should install npm. It's a package manager for node.
-Install these packages using `npm install <package>`
+Install these packages using 
+$ npm install <package>
 
 In production:
  - redis
