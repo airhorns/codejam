@@ -158,10 +158,11 @@ stopRenderTimer = () ->
 		renderTimer = false
 
 socket.on 'message', (data) ->
+	console.log(data)
 	try
 		data = JSON.parse(data)
 	catch error
-		console.log("Error parsing a datum")
+		console.log("Error parsing a datum", error, data)
 	
 	# Figure out what the message was
 	if data.bId

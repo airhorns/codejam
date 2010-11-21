@@ -25,18 +25,20 @@
   BidChunkProcessor.prototype.currentChunk = 0;
   BidChunkProcessor.prototype.count = 0;
   BidChunkProcessor.prototype.getNextChunk = function() {
-    return this.client.sort(["bIds", "BY", "bid_*->price", "DESC", "LIMIT", this.currentChunk * this.chunkSize, this.chunkSize, "GET", "bid_*->price", "GET", "bid_*->shares"], __bind(function(err, reply) {
+    return this.client.sort(["bIds", "BY", "bid_*->price", "DESC", "LIMIT", this.currentChunk * this.chunkSize, this.chunkSize, "GET", "#", "GET", "bid_*->price", "GET", "bid_*->shares", "GET", "bid_*->bidder", "GET", "bid_*->time"], __bind(function(err, reply) {
       this.processCallback(err, reply);
       return this.currentChunk += 1;
     }, this));
   };
   BidChunkProcessor.prototype.tryNextChunk = function(errorCallback) {
     if (!(this.currentChunk >= this.totalChunks)) {
-      return this.getNextChunk();
+      this.getNextChunk();
     } else {
-      errorCallback();
-      return false;
+      if (typeof errorCallback !== "undefined" && errorCallback !== null) {
+        errorCallback();
+      }
     }
+    return false;
   };
   BidDatabase = function(config, responder) {
     var _this;
@@ -44,9 +46,6 @@
     this.reInitialize = function(){ return BidDatabase.prototype.reInitialize.apply(_this, arguments); };
     this.addBid = function(){ return BidDatabase.prototype.addBid.apply(_this, arguments); };
     this.client = Redis.createClient();
-    this.client.on("error", __bind(function(err) {
-      return console.log("Redis connection error to " + this.client.host + ":" + this.client.port + " - " + err);
-    }, this));
     if (typeof responder !== "undefined" && responder !== null) {
       this.watchResponder(responder);
     }

@@ -209,10 +209,11 @@
     }
   };
   socket.on('message', function(data) {
+    console.log(data);
     try {
       data = JSON.parse(data);
     } catch (error) {
-      console.log("Error parsing a datum");
+      console.log("Error parsing a datum", error, data);
     }
     if (data.bId) {
       toBeRendered.push([data.bId, data.bidder, data.shares, data.price]);

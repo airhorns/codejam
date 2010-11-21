@@ -1,8 +1,9 @@
 BidDatabase = require('../server/bid_database.js').BidDatabase
 BidAnalyser = require('../server/bid_analyser.js').BidAnalyser
+Redis = require("redis")
+
 db = new BidDatabase()
 analyser = new BidAnalyser(100000, db)
-
 express = require('express')
 app = express.createServer()
 
@@ -24,22 +25,38 @@ app.configure 'production', () ->
 app.get '/', (req, res) ->
   res.render('index')
 
-app.listen(3000)
-
 io = require('socket.io')
 socket = io.listen(app)
 
-socket.on 'connection', () ->
+socket.on 'connection', (browser) ->
+	db.fetchBidsInChunks((error, data) ->
+		if error?
+			console.log(error)
+			return false
+		else
+			while data? && data.length > 0
+				bId = parseFloat(data.pop().toString('ascii'))
+				shares = parseFloat(data.pop().toString('ascii'))
+				price = parseFloat(data.pop().toString('ascii'))
+				bidder = data.pop().toString('ascii')
+				time = data.pop().toString('ascii')
+				browser.send(JSON.stringify({shares:shares, price:price, bidder:bidder, time: new Date(time)}))
+			this.tryNextChunk()
+	)
 	
 socket.on 'message', (data) ->
   alert(data)
 
 socket.on 'disconnect', ->
 
-db.client.on "message", (channel, message) ->
+redisSubscriber = Redis.createClient()
+
+redisSubscriber.on "message", (channel, message) ->
 	return unless channel == "bids"
 	console.log("broadcasting message #{message}")
 	socket.broadcast(message)
 
-db.client.subscribe("bids")
+redisSubscriber.subscribe("bids")
+
+app.listen(3000)
 

@@ -62,8 +62,11 @@
         throw error;
       }
       while ((typeof data !== "undefined" && data !== null) && data.length > 0) {
+        data.pop();
         shares = parseFloat(data.pop().toString('ascii'));
         price = parseFloat(data.pop().toString('ascii'));
+        data.pop();
+        data.pop();
         if ((typeof price !== "undefined" && price !== null) && (typeof shares !== "undefined" && shares !== null)) {
           sharesSold += price * shares;
           if (memo) {

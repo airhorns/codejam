@@ -20,8 +20,11 @@ class BidChunkProcessor
 	getNextChunk: () =>
 		@client.sort(["bIds", "BY", "bid_*->price", "DESC",
 									"LIMIT", @currentChunk * @chunkSize, @chunkSize,
+									"GET", "#",
 									"GET", "bid_*->price",
-									"GET", "bid_*->shares"],
+									"GET", "bid_*->shares",
+									"GET", "bid_*->bidder",
+									"GET", "bid_*->time"],
 									(err, reply) =>
 										@processCallback(err, reply)
 										@currentChunk += 1
@@ -31,14 +34,14 @@ class BidChunkProcessor
 		unless @currentChunk >= @totalChunks
 			this.getNextChunk()
 		else
-			errorCallback()
-			return false
+			errorCallback() if errorCallback?
+		return false
 
 class BidDatabase
 	constructor: (config, responder) ->
 		@client = Redis.createClient()
-		@client.on "error", (err) =>
-			console.log("Redis connection error to " + @client.host + ":" + @client.port + " - " + err)
+		# @client.on "error", (err) =>
+		# 	console.log("Redis connection error to " + @client.host + ":" + @client.port + " - " + err)
 		this.watchResponder(responder) if responder?
 
 	watchResponder: (responder) ->

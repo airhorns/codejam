@@ -26,7 +26,6 @@ server = net.createServer (stream) ->
 		# console.log(hexy.hexy(data))
 		# console.log(hexy.hexy(retStr))
 		# console.log("Message "+data+" being returned "+retStr)
-		#
 
 	stream.on 'end', () ->
 		stream.end()
@@ -39,4 +38,4 @@ database.watchResponder(responder)
 analyser = new BidAnalyser(CLEARINGSHARES, database, responder)
 
 server.maxConnections = 10000
-server.listen(8124, 'localhost')
+server.listen(8124)

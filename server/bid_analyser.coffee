@@ -33,9 +33,12 @@ class BidAnalyser
 			# In context of ChunkProcessor
 			throw error if error?
 			while data? && data.length > 0
+				data.pop() # for bId
 				shares = parseFloat(data.pop().toString('ascii'))
 				price = parseFloat(data.pop().toString('ascii'))
-					
+				data.pop() # For bidder field
+				data.pop() # For time field
+				
 				if price? && shares?
 					sharesSold += price * shares
 

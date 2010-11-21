@@ -1,7 +1,8 @@
 (function() {
-  var BidAnalyser, BidDatabase, analyser, app, db, express, io, socket;
+  var BidAnalyser, BidDatabase, Redis, analyser, app, db, express, io, redisSubscriber, socket;
   BidDatabase = require('../server/bid_database.js').BidDatabase;
   BidAnalyser = require('../server/bid_analyser.js').BidAnalyser;
+  Redis = require("redis");
   db = new BidDatabase();
   analyser = new BidAnalyser(100000, db);
   express = require('express');
@@ -25,20 +26,44 @@
   app.get('/', function(req, res) {
     return res.render('index');
   });
-  app.listen(3000);
   io = require('socket.io');
   socket = io.listen(app);
-  socket.on('connection', function() {});
+  socket.on('connection', function(browser) {
+    return db.fetchBidsInChunks(function(error, data) {
+      var bId, bidder, price, shares, time;
+      if (typeof error !== "undefined" && error !== null) {
+        console.log(error);
+        return false;
+      } else {
+        while ((typeof data !== "undefined" && data !== null) && data.length > 0) {
+          bId = parseFloat(data.pop().toString('ascii'));
+          shares = parseFloat(data.pop().toString('ascii'));
+          price = parseFloat(data.pop().toString('ascii'));
+          bidder = data.pop().toString('ascii');
+          time = data.pop().toString('ascii');
+          browser.send(JSON.stringify({
+            shares: shares,
+            price: price,
+            bidder: bidder,
+            time: new Date(time)
+          }));
+        }
+        return this.tryNextChunk();
+      }
+    });
+  });
   socket.on('message', function(data) {
     return alert(data);
   });
   socket.on('disconnect', function() {});
-  db.client.on("message", function(channel, message) {
+  redisSubscriber = Redis.createClient();
+  redisSubscriber.on("message", function(channel, message) {
     if (channel !== "bids") {
       return null;
     }
     console.log("broadcasting message " + (message));
     return socket.broadcast(message);
   });
-  db.client.subscribe("bids");
+  redisSubscriber.subscribe("bids");
+  app.listen(3000);
 }).call(this);
