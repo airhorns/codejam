@@ -19,7 +19,7 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 
-#include <boost/regex.hpp>
+//#include <boost/regex.hpp>
 
 #include <list>
 
@@ -31,10 +31,11 @@
 #endif // linux
 
 #define CONNTIMEOUT 4
-#define MINBIDVALUE 0
-#define MAXBIDVALUE 100
-#define MAXBIDATONCE 10000
-#define TOTALSHARES 1000
+//#define MINBIDVALUE 0
+//#define MAXBIDVALUE 100
+//#define MAXBIDATONCE 10000
+//#define TOTALSHARES 1000
+#include "config.h"
 #define ACCEPTSTR "A\r\n"
 #define ERRORSTR "E\r\n"
 #define CLOSESTR "C\r\n"
@@ -48,7 +49,7 @@ const string CORRECTCLOSE("C|TERMINATE\r\n");
 const string CORRECTRESET("R\r\n");
 const string CORRECTSUMMARY("S|SUMMARY\r\n");
 
-//const boost::regex CORRECTREGEX("^B\|[0-9]{1,7}\|[0-9]{1,7}\|\s*.+?\s*$");
+//const boost::regex CORRECTREGEX("^B\\|[0-9]{1,7}\\|[0-9]{1,7}\\|\\s*.+?\\s*$");
 char *str[12];
 redisContext *redC;
 redisReply *rreply;
@@ -190,7 +191,7 @@ static bool parseRequest(Session *sptr)
 			val1 = atoi(input.substr(firstSeparator+1,length1).c_str()); //value of the first field - number of bids
 			val2 = atoi(input.substr(secondSeparator+1,length2).c_str());//value of the second field - cost of bids
 			bidNameLen = thirdSeparator - (sptr->rbytes - 1);
-			if( //	(!regex_match( input, CORRECTREGEX)) ||
+			if(// 	(!regex_match( input, CORRECTREGEX)) ||
 				(thirdSeparator == (-1) ) || //error checking...
 				(firstSeparator != 1) || 
 				(secondSeparator-firstSeparator <= 1) ||

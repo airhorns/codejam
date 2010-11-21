@@ -582,7 +582,6 @@ int redisvFormatCommand(char **target, const char *format, va_list ap) {
     for (j = 0; j < argc; j++) {
         pos += sprintf(cmd+pos,"$%zu\r\n",sdslen(argv[j]));
         memcpy(cmd+pos,argv[j],sdslen(argv[j]));
-	printf("%s\n",argv[j]);
         pos += sdslen(argv[j]);
         sdsfree(argv[j]);
         cmd[pos++] = '\r';
