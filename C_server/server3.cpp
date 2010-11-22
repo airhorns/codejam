@@ -141,7 +141,7 @@ static void printStatus(){
 //if the port hasn't been specified...
 static void usage(const char *progname)
 {
-  printf("Usage: %s -p Portnum -n miNbidvalue -x maXbidvalue -o maxsharesbidatOnce -t Totalshares [-h(elp)]\n", progname);
+  printf("Usage: %s -p Portnum -n miNbidvalue -x maXbidvalue -c maxsharesbidatOnce -t Totalshares [-h(elp)]\n", progname);
 }
 
 
@@ -191,7 +191,7 @@ static bool parseRequest(Session *sptr)
 		}setReply( sptr, output);
 		return true;
 	}
-	int strlength, firstSeparator,secondSeparator,thirdSeparator, length1, length2, val1, val2, bidNameLen, tmp;
+	int strlength, firstSeparator,secondSeparator,thirdSeparator, fourthSeparator, length1, length2, val1, val2, bidNameLen, tmp;
 	char bidderName[60];
 	char fixedBidderName[32];
 	char *buf;
@@ -203,7 +203,7 @@ static bool parseRequest(Session *sptr)
 			firstSeparator = input.find("|",0);
 			secondSeparator = input.find("|",firstSeparator+1);
 			thirdSeparator = input.find("|",secondSeparator+1);
-			fourthSeparator = input.find("|",thirsSeparator+1);
+			fourthSeparator = input.find("|",thirdSeparator+1);
 			length1 = secondSeparator - firstSeparator -1;
 			length2 = thirdSeparator - secondSeparator -1;
 			val1 = atoi(input.substr(firstSeparator+1,length1).c_str()); //value of the first field - number of bids
@@ -459,10 +459,17 @@ int main(int argc, char *argv[])
   unsigned short portnum = 0;
   int i;
   for(i=0;i<12;i++) str[i] = (char*)malloc(sizeof(char)*50);
-	
-  // Parse command line
-  while( (arg=getopt(argc, argv, "p:h:x:n:t")) != EOF) {
-    switch( arg) {
+
+	portnum=atoi(argv[1]);
+	MINBIDVALUE=atoi(argv[2]);
+	MAXBIDVALUE=atoi(argv[3]);
+	TOTALSHARES=atoi(argv[4]);
+	MAXBIDATONCE=atoi(argv[5]);	
+	// Parse command line
+	/*
+  while( (arg=getopt(argc, argv, "p:h:c:x:n:t")) != EOF) {
+	printf("%c\n%s\n",arg,optarg);  
+  switch( arg) {
     case 'n':
 	MINBIDVALUE = atoi(optarg);
 	break;
@@ -472,7 +479,7 @@ int main(int argc, char *argv[])
     case 't':
 	TOTALSHARES = atoi(optarg);
 	break;
-    case 'o':
+    case 'c':
 	MAXBIDATONCE = atoi(optarg);
 	break;		
     case 'p':
@@ -485,7 +492,7 @@ int main(int argc, char *argv[])
       // Notreached
       break;
     }
-  }
+  }*/
   bidID = 0;
   redC = redisConnect((char*)"127.0.0.1", 6379); 
 
