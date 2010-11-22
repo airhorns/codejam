@@ -19,7 +19,7 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 
-#include <boost/regex.hpp>
+//#include <boost/regex.hpp>
 
 #include <list>
 
@@ -49,7 +49,7 @@ const string CORRECTCLOSE("C|TERMINATE\r\n");
 const string CORRECTRESET("R\r\n");
 const string CORRECTSUMMARY("S|SUMMARY\r\n");
 
-const boost::regex CORRECTREGEX("^B\\|[0-9]{1,7}\\|[0-9]{1,7}\\|\\s*.+?\\s*$");
+//const boost::regex CORRECTREGEX("^B\\|[0-9]{1,7}\\|[0-9]{1,7}\\|\\s*.+?\\s*$");
 char *str[12];
 redisContext *redC;
 redisReply *rreply;
@@ -82,14 +82,24 @@ static void printStatus(){
 	if ( bidOpen) printf("Auction Status OPEN\n");
 	else printf("Auction Status CLOSED\n");
 	int sharesSold=0;
+
+	//get total number of objects in database
 	rreply = (redisReply*)redisCommand(redC, "DBSIZE");
 	long long total = rreply->integer;
 	freeReplyObject((void*)rreply);
+
+	//find out whether the threshold number of bids has been made
 	int counter;
 	rreply = (redisReply*)redisCommand(redC, "SORT bIds BY bid_*->price DESC GET bid_*->shares GET bid_*->price");
 	for(counter=0;(counter) < total-2;counter++){
 		sharesSold+=atoi(rreply->element[counter*2+1]->str);
 	}
+
+	/* if the threshold number of shares has been bid on,
+ * 	   we obtain all of them in the rreply, already sorted.
+ * 	   Then we print all the different values of bids that have
+ * 	   been made and display them with the corresponding number 
+ * 	   of bids for each value.*/
 	if(sharesSold < TOTALSHARES) printf("not enough shares were sold.\n");
 	else{
 		sharesSold=0;
@@ -106,6 +116,8 @@ static void printStatus(){
 	sharesSold=0;
 	int prevPrice=0;
 	int tmp;
+
+	//the actual display of all the bet values and number of bets for each
 	for(counter=(total-3);(counter) >=0 ;counter--){
 		tmp = atoi(rreply->element[counter*2+1]->str);
 		if( prevPrice != tmp) {
@@ -118,10 +130,11 @@ static void printStatus(){
 		}
 	}
 	
-	
+	//free memory
 	freeReplyObject((void*)rreply);
 }
 
+//if the port hasn't been specified...
 static void usage(const char *progname)
 {
   printf("Usage: %s -p portnum [-h(elp)]\n", progname);
@@ -134,6 +147,7 @@ static void set_non_blocking(int sockfd)
   fcntl( sockfd, F_SETFL, flags | O_NONBLOCK);
 }
 
+//sends the string as a reply on the socket
 static void setReply( Session *sessPtr, const char *reply)
 {
   int toCopy = strlen(reply);
@@ -144,6 +158,7 @@ static void setReply( Session *sessPtr, const char *reply)
   sessPtr->wsize = toCopy;
 }
 
+//if a reset is received, flush database, reopen bidding, and display it to stdout.
 static void resetAll(){
 	bidOpen = 1;
 	redisCommand(redC, "PUBLISH commands reset");
@@ -154,6 +169,7 @@ static void resetAll(){
 	freeReplyObject((void*)rreply);
 }
 
+//what to do on a string received on the socket...
 static bool parseRequest(Session *sptr)
 {
 //	printf("%i\t%s\n",sptr->rbytes, sptr->readbuf);
@@ -188,7 +204,7 @@ static bool parseRequest(Session *sptr)
 			val1 = atoi(input.substr(firstSeparator+1,length1).c_str()); //value of the first field - number of bids
 			val2 = atoi(input.substr(secondSeparator+1,length2).c_str());//value of the second field - cost of bids
 			bidNameLen = thirdSeparator - (sptr->rbytes - 1);
-			if( 	(!regex_match( input, CORRECTREGEX)) ||
+			if( 	//(!regex_match( input, CORRECTREGEX)) ||
 				(thirdSeparator == (-1) ) || //error checking...
 				(firstSeparator != 1) || 
 				(secondSeparator-firstSeparator <= 1) ||
