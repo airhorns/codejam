@@ -71,7 +71,7 @@
       _ref = bids;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         bid = _ref[_i];
-        sharesSold += bid.price * bid.shares;
+        sharesSold += bid.shares;
         if (memo) {
           key = "$" + String(bid.price);
           memo.bids[key] = (typeof memo.bids[key] !== "undefined" && memo.bids[key] !== null) ? memo.bids[key] : 0;

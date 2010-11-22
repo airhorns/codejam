@@ -39,7 +39,7 @@ class BidAnalyser
 				callback(null, null)
 				return
 			for bid in bids
-				sharesSold += bid.price * bid.shares
+				sharesSold += bid.shares
 
 				if memo
 					key = "$"+String(bid.price)
