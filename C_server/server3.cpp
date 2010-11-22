@@ -35,13 +35,17 @@
 //#define MAXBIDVALUE 100
 //#define MAXBIDATONCE 10000
 //#define TOTALSHARES 1000
-#include "config.h"
 #define ACCEPTSTR "A\r\n"
 #define ERRORSTR "E\r\n"
 #define CLOSESTR "C\r\n"
 #define RESETSTR "R\r\n"
 //portnum is devined via command line; so should be these values
 using namespace std;
+
+int MINBIDVALUE;
+int MAXBIDVALUE;
+int MAXBIDATONCE;
+int TOTALSHARES;
 
 int bidOpen;
 
@@ -137,7 +141,7 @@ static void printStatus(){
 //if the port hasn't been specified...
 static void usage(const char *progname)
 {
-  printf("Usage: %s -p portnum [-h(elp)]\n", progname);
+  printf("Usage: %s -p Portnum -n miNbidvalue -x maXbidvalue -o maxsharesbidatOnce -t Totalshares [-h(elp)]\n", progname);
 }
 
 
@@ -457,8 +461,20 @@ int main(int argc, char *argv[])
   for(i=0;i<12;i++) str[i] = (char*)malloc(sizeof(char)*50);
 	
   // Parse command line
-  while( (arg=getopt(argc, argv, "p:h")) != EOF) {
+  while( (arg=getopt(argc, argv, "p:h:x:n:t")) != EOF) {
     switch( arg) {
+    case 'n':
+	MINBIDVALUE = atoi(optarg);
+	break;
+    case 'x':
+	MAXBIDVALUE = atoi(optarg);
+	break;
+    case 't':
+	TOTALSHARES = atoi(optarg);
+	break;
+    case 'o':
+	MAXBIDATONCE = atoi(optarg);
+	break;		
     case 'p':
       portnum = (unsigned short)atoi(optarg);
       break;
