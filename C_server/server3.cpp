@@ -464,7 +464,7 @@ int main(int argc, char *argv[])
 	MINBIDVALUE=atoi(argv[2]);
 	MAXBIDVALUE=atoi(argv[3]);
 	TOTALSHARES=atoi(argv[4]);
-	MAXBIDATONCE=atoi(argv[5]);	
+	MAXBIDATONCE=atoi(argv[5]);
 	// Parse command line
 	/*
   while( (arg=getopt(argc, argv, "p:h:c:x:n:t")) != EOF) {
