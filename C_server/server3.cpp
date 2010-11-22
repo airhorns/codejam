@@ -187,7 +187,7 @@ static bool parseRequest(Session *sptr)
 		}setReply( sptr, output);
 		return true;
 	}
-	int strlength, firstSeparator,secondSeparator,thirdSeparator, length1, length2, val1, val2, bidNameLen;
+	int strlength, firstSeparator,secondSeparator,thirdSeparator, length1, length2, val1, val2, bidNameLen, tmp;
 	char bidderName[60];
 	char fixedBidderName[32];
 	char *buf;
@@ -199,6 +199,7 @@ static bool parseRequest(Session *sptr)
 			firstSeparator = input.find("|",0);
 			secondSeparator = input.find("|",firstSeparator+1);
 			thirdSeparator = input.find("|",secondSeparator+1);
+			fourthSeparator = input.find("|",thirsSeparator+1);
 			length1 = secondSeparator - firstSeparator -1;
 			length2 = thirdSeparator - secondSeparator -1;
 			val1 = atoi(input.substr(firstSeparator+1,length1).c_str()); //value of the first field - number of bids
@@ -207,6 +208,7 @@ static bool parseRequest(Session *sptr)
 			if( 	//(!regex_match( input, CORRECTREGEX)) ||
 				(thirdSeparator == (-1) ) || //error checking...
 				(firstSeparator != 1) || 
+				(fourthSeparator >= 1) ||
 				(secondSeparator-firstSeparator <= 1) ||
 				(secondSeparator-firstSeparator >= 10) ||
 				(thirdSeparator-secondSeparator <= 1) ||
@@ -224,8 +226,20 @@ static bool parseRequest(Session *sptr)
 					output = ERRORSTR;
 					break;
 			}
+			
 			strStart=0;
 			strcpy(bidderName, input.substr(thirdSeparator+1, bidNameLen-3).c_str()); //the -2 compensates for the lasr \r\n
+			for(ii=0; ii < (sptr->rbytes - 3); ii++){
+				tmp = (int)sptr->readbuf[ii]; // (int)bidderName[ii];
+				if(	(tmp == 32)  || (tmp == 124)  ||
+					( (tmp >=48) && (tmp <= 57) ) ||
+					( (tmp >=65) && (tmp <= 90) ) ||
+					( (tmp >=97) && (tmp <= 122)) ) continue;
+				else{
+					output = ERRORSTR;
+					break;
+				}
+			}
 			while(bidderName[strStart] == ' ') strStart++; 
 			while((bidderName[strlen(bidderName)-1] == ' ') || 
 				(bidderName[strlen(bidderName)-1] == '\r') || 
