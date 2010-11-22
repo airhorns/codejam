@@ -12,5 +12,5 @@ maxsharesperbid=`cat config.yaml | grep maxSharesPerBid | cut -d: -f2 | sed -e '
 portnum=`cat config.yaml | grep ^port | cut -d: -f2 | sed -e 's/\s//'`
 
 cd ../C_server
-./serverTest ${portnum} ${aaa} ${maxbidatonce} ${totalshares} $maxsharesperbid
+./serverTest ${portnum} ${aaa} ${maxbidatonce} ${totalshares} $maxsharesperbid &
 chromium-browser localhost:3000
