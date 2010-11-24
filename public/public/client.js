@@ -1,16 +1,20 @@
 (function() {
-  var BidModel, bidCountInput, bidsDetailsChart, bidsMasterChart, bidsReceived, clearingPriceInput, currentClearingPrice, drawClearingThreshold, formatHlted, formatPrice, hlt, lastQuery, model, renderTimeout, renderTimer, resetHeaders, socket, stopRenderTimer, table, toBeRendered, updateTable, waitingRenderThreshold;
-  var __extends = function(child, parent) {
-    var ctor = function(){};
+  var BidModel, bidCountInput, bidsDetailsChart, bidsMasterChart, bidsReceived, clearingPriceInput, currentClearingPrice, drawClearingThreshold, formatHlted, formatPrice, hlt, lastQuery, model, renderTimeout, renderTimer, resetHeaders, socket, stopRenderTimer, table, toBeRendered, updateTable, waitingRenderThreshold, _ref;
+  var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
+    for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
+    function ctor() { this.constructor = child; }
     ctor.prototype = parent.prototype;
-    child.prototype = new ctor();
-    child.prototype.constructor = child;
-    if (typeof parent.extended === "function") parent.extended(child);
+    child.prototype = new ctor;
     child.__super__ = parent.prototype;
+    return child;
   };
   hlt = '';
   formatHlted = function(t) {
-    return hlt ? (t || '').replace(hlt, '<strong>' + hlt + '</strong>') : t;
+    if (hlt) {
+      return (t || '').replace(hlt, '<strong>' + hlt + '</strong>');
+    } else {
+      return t;
+    }
   };
   formatPrice = function(t) {
     return "$" + String(t || 0) + ".00";
@@ -174,7 +178,7 @@
       zoomType: 'x',
       events: {
         selection: function(event) {
-          var _i, _len, _ref, chartExtremes, detailData, point, selectionExtremes, xAxis;
+          var chartExtremes, detailData, point, selectionExtremes, xAxis, _i, _len, _ref, _ref2, _ref3;
           selectionExtremes = event.xAxis[0];
           chartExtremes = event.currentTarget.xAxis[0].getExtremes();
           detailData = [];
@@ -196,14 +200,14 @@
             id: 'mask-before',
             from: chartExtremes.min,
             to: selectionExtremes.min,
-            color: (Highcharts.theme == null ? undefined : Highcharts.theme.maskColor) || 'rgba(0, 0, 0, 0.2)'
+            color: ((_ref2 = Highcharts.theme) != null ? _ref2.maskColor : void 0) || 'rgba(0, 0, 0, 0.2)'
           });
           xAxis.removePlotBand('mask-after');
           xAxis.addPlotBand({
             id: 'mask-after',
             from: selectionExtremes.max,
             to: chartExtremes.max,
-            color: (Highcharts.theme == null ? undefined : Highcharts.theme.maskColor) || 'rgba(0, 0, 0, 0.2)'
+            color: ((_ref3 = Highcharts.theme) != null ? _ref3.maskColor : void 0) || 'rgba(0, 0, 0, 0.2)'
           });
           bidsDetailsChart.series[0].setData(detailData);
           bidsDetailsChart.series[1].setData([[selectionExtremes.min, currentClearingPrice], [selectionExtremes.max, currentClearingPrice]]);
@@ -221,7 +225,7 @@
       plotBands: [
         {
           id: 'mask-before',
-          color: (Highcharts.theme == null ? undefined : Highcharts.theme.maskColor) || 'rgba(0, 0, 0, 0.2)'
+          color: ((_ref = Highcharts.theme) != null ? _ref.maskColor : void 0) || 'rgba(0, 0, 0, 0.2)'
         }
       ],
       title: {
@@ -281,7 +285,7 @@
     }
   }, function(masterChart) {
     console.log("Creating details chart");
-    return (bidsDetailsChart = new Highcharts.Chart({
+    return bidsDetailsChart = new Highcharts.Chart({
       chart: {
         renderTo: 'bidDetailsDisplay',
         marginRight: 10,
@@ -324,7 +328,7 @@
       },
       tooltip: {
         formatter: function() {
-          return '<b>' + this.point.bidder + '</b>:<br/>' + this.point.shares + ' shares at $' + Highcharts.numberFormat(this.y, 2) + "<br/>Submitted " + Highcharts.dateFormat('%a %b %e %l:%M:%S %P', this.x);
+          return '<b>' + this.point.bidder(+'</b>:<br/>' + this.point.shares + ' shares at $' + Highcharts.numberFormat(this.y, 2) + "<br/>Submitted " + Highcharts.dateFormat('%a %b %e %l:%M:%S %P', this.x));
         }
       },
       legend: {
@@ -348,15 +352,15 @@
           enableMouseTracking: false
         }
       ]
-    }));
+    });
   });
   currentClearingPrice = false;
   drawClearingThreshold = function(price) {
-    var _ref, data;
+    var data;
     currentClearingPrice = price;
-    if (typeof bidsDetailsChart !== "undefined" && bidsDetailsChart !== null) {
+    if (bidsDetailsChart != null) {
       data = bidsDetailsChart.series[1].data;
-      if ((typeof data !== "undefined" && data !== null) && (typeof (_ref = data[0]) !== "undefined" && _ref !== null) && (typeof (_ref = data[1]) !== "undefined" && _ref !== null)) {
+      if ((data != null) && (data[0] != null) && (data[1] != null)) {
         data[0][1] = price;
         data[1][1] = price;
         bidsDetailsChart.series[1].setData(data);
@@ -365,45 +369,44 @@
     }
   };
   BidModel = function() {
-    return Searchable.apply(this, arguments);
-  };
-  __extends(BidModel, Searchable);
-  BidModel.prototype.init = function(data) {
-    this.items = (typeof this.items !== "undefined" && this.items !== null) ? this.items : [];
-    this.frequencies = {};
-    return this.addItems(data);
-  };
-  BidModel.prototype.addItems = function(new_items) {
-    var _i, _len, _ref, row;
-    _ref = new_items;
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      row = _ref[_i];
-      row.searchIndex = row[1].toLowerCase();
+    function BidModel() {
+      BidModel.__super__.constructor.apply(this, arguments);
     }
-    return (this.items = this.items.concat(new_items));
-  };
-  BidModel.prototype.matchRow = function(row, iterator) {
-    return row.searchIndex.indexOf(iterator.query) > -1;
-  };
+    __extends(BidModel, Searchable);
+    BidModel.prototype.init = function(data) {
+      var _ref;
+      (_ref = this.items) != null ? _ref : this.items = [];
+      this.frequencies = {};
+      return this.addItems(data);
+    };
+    BidModel.prototype.addItems = function(new_items) {
+      var row, _i, _len;
+      for (_i = 0, _len = new_items.length; _i < _len; _i++) {
+        row = new_items[_i];
+        row.searchIndex = row[1].toLowerCase();
+      }
+      return this.items = this.items.concat(new_items);
+    };
+    BidModel.prototype.matchRow = function(row, iterator) {
+      return row.searchIndex.indexOf(iterator.query) > -1;
+    };
+    return BidModel;
+  }();
   model = new BidModel([]);
   lastQuery = '';
   table = uki('Table');
   table.data(model.items);
   resetHeaders = function(except) {
     return table.find('Header').each(function() {
-      var _i, _len, _ref, _result, col, header;
+      var col, header, _i, _len, _ref, _results;
       header = this;
-      _result = []; _ref = header.columns();
+      _ref = header.columns();
+      _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         col = _ref[_i];
-        _result.push((function() {
-          if (!(typeof except !== "undefined" && except !== null) || col !== except) {
-            col.sort('');
-            return header.redrawColumn(col._position);
-          }
-        })());
+        _results.push(!(except != null) || col !== except ? (col.sort(''), header.redrawColumn(col._position)) : void 0);
       }
-      return _result;
+      return _results;
     });
   };
   table.find('Header').bind('columnClick', function(e) {
@@ -426,7 +429,7 @@
   });
   uki('#bidderSearch').bind('keyup click', function() {
     if (this.value().toLowerCase() === lastQuery) {
-      return null;
+      return;
     }
     lastQuery = this.value().toLowerCase();
     if (lastQuery.match(/\S/)) {
@@ -447,13 +450,12 @@
   bidCountInput = uki('#bidsReceived');
   clearingPriceInput = uki('#clearingPrice');
   updateTable = function() {
-    var _i, _len, _ref, row;
+    var row, _i, _len;
     bidsReceived += toBeRendered.length;
     bidCountInput.value(bidsReceived);
-    if (typeof bidsMasterChart !== "undefined" && bidsMasterChart !== null) {
-      _ref = toBeRendered;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        row = _ref[_i];
+    if (bidsMasterChart != null) {
+      for (_i = 0, _len = toBeRendered.length; _i < _len; _i++) {
+        row = toBeRendered[_i];
         bidsMasterChart.series[0].addPoint({
           x: row[4].getTime(),
           y: row[3],
@@ -471,36 +473,38 @@
     } else {
       bidsMasterChart.redraw();
     }
-    return (toBeRendered = []);
+    return toBeRendered = [];
   };
   stopRenderTimer = function() {
     if (renderTimer) {
       clearTimeout(renderTimer);
-      return (renderTimer = false);
+      return renderTimer = false;
     }
   };
-  socket = new io.Socket("localhost");
+  socket = new io.Socket();
   socket.on('connect', function() {
     console.log("Socket established.");
     return uki('#loading').visible(false);
   });
   socket.on('message', function(buffer) {
-    var data;
+    var data, _ref;
     try {
       data = JSON.parse(buffer);
     } catch (error) {
       console.log("Error parsing a datum", error, data);
-      return null;
+      return;
     }
     if (data.bId) {
       toBeRendered.push([data.bId, data.bidder, data.shares, data.price, new Date(parseInt(data.time))]);
       if (toBeRendered.length < waitingRenderThreshold) {
-        return !(renderTimer) ? (renderTimer = setTimeout(updateTable, renderTimeout)) : null;
+        if (!renderTimer) {
+          return renderTimer = setTimeout(updateTable, renderTimeout);
+        }
       } else {
         stopRenderTimer();
         return updateTable();
       }
-    } else if (data.summary == null ? undefined : data.summary.clearingPrice) {
+    } else if ((_ref = data.summary) != null ? _ref.clearingPrice : void 0) {
       clearingPriceInput.value(data.summary.clearingPrice);
       return drawClearingThreshold(data.summary.clearingPrice);
     }

@@ -32,14 +32,13 @@
   socket = io.listen(app);
   socket.on('connection', function(browser) {
     return db.fetchBidsInChunks(function(error, bids) {
-      var _i, _len, _ref, bid;
-      if ((typeof error !== "undefined" && error !== null) || !(typeof bids !== "undefined" && bids !== null)) {
+      var bid, _i, _len;
+      if ((error != null) || !(bids != null)) {
         console.log(error);
         return false;
       } else {
-        _ref = bids;
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          bid = _ref[_i];
+        for (_i = 0, _len = bids.length; _i < _len; _i++) {
+          bid = bids[_i];
           browser.send(JSON.stringify(bid));
         }
         return this.tryNextChunk();
@@ -53,7 +52,7 @@
   redisSubscriber = Redis.createClient();
   redisSubscriber.on("message", function(channel, message) {
     if (channel !== "bids") {
-      return null;
+      return;
     }
     return socket.broadcast(message);
   });
@@ -61,14 +60,14 @@
   summaryRunning = false;
   setInterval(function() {
     if (summaryRunning) {
-      return null;
+      return;
     }
     summaryRunning = true;
     return analyser.getClearingPrice(null, function(error, price) {
-      if (typeof error !== "undefined" && error !== null) {
+      if (error != null) {
         return console.log(error);
       } else {
-        if (typeof price !== "undefined" && price !== null) {
+        if (price != null) {
           socket.broadcast(JSON.stringify({
             summary: {
               clearingPrice: price
@@ -77,9 +76,9 @@
         } else {
           console.log("Unable to get clearing price!", error, price);
         }
-        return (summaryRunning = false);
+        return summaryRunning = false;
       }
     });
-  }, 3000);
+  }, 2000);
   app.listen(config.webServerPort);
 }).call(this);

@@ -379,7 +379,8 @@ stopRenderTimer = () ->
 	if renderTimer
 		clearTimeout(renderTimer)
 		renderTimer = false
-socket = new io.Socket("localhost")
+
+socket = new io.Socket()
 
 socket.on 'connect', () ->
 	console.log("Socket established.")

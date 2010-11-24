@@ -1,4 +1,4 @@
-clearingShares: 10000000
+clearingShares: 1000
 minSharePrice: 30
 maxSharePrice: 100
 maxSharesPerBid: 100000
