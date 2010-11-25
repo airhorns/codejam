@@ -328,7 +328,7 @@
       },
       tooltip: {
         formatter: function() {
-          return '<b>' + this.point.bidder(+'</b>:<br/>' + this.point.shares + ' shares at $' + Highcharts.numberFormat(this.y, 2) + "<br/>Submitted " + Highcharts.dateFormat('%a %b %e %l:%M:%S %P', this.x));
+          return "<b>" + this.point.bidder + "</b>:<br/>" + this.point.shares + " shares at $" + (Highcharts.numberFormat(this.y, 2)) + "<br/>Submitted " + (Highcharts.dateFormat('%a %b %e %l:%M:%S %P', this.x));
         }
       },
       legend: {
@@ -481,7 +481,7 @@
       return renderTimer = false;
     }
   };
-  socket = new io.Socket();
+  socket = new io.Socket(window.location.hostname);
   socket.on('connect', function() {
     console.log("Socket established.");
     return uki('#loading').visible(false);

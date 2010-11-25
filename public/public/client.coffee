@@ -248,9 +248,7 @@ bidsMasterChart = new Highcharts.Chart({
 				lineWidth: 10
 		tooltip:
 			formatter: () ->
-				return '<b>'+ this.point.bidder +'</b>:<br/>'+
-                  this.point.shares + ' shares at $'+ Highcharts.numberFormat(this.y, 2)+"<br/>Submitted "+
-                  Highcharts.dateFormat('%a %b %e %l:%M:%S %P', this.x)
+				return "<b>#{this.point.bidder}</b>:<br/>#{this.point.shares} shares at $#{Highcharts.numberFormat(this.y, 2)}<br/>Submitted #{Highcharts.dateFormat('%a %b %e %l:%M:%S %P', this.x)}"
 		legend:
 			enabled: false
 		exporting:
@@ -380,7 +378,7 @@ stopRenderTimer = () ->
 		clearTimeout(renderTimer)
 		renderTimer = false
 
-socket = new io.Socket()
+socket = new io.Socket(window.location.hostname)
 
 socket.on 'connect', () ->
 	console.log("Socket established.")
